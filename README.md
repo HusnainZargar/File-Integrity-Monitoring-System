@@ -1,14 +1,12 @@
-# 🛡️ File Integrity Monitoring (FIM) System for Linux
+# File Integrity Monitoring (FIM) System for Linux
 
 ![Python](https://img.shields.io/badge/Python-3.x-blue)
 ![Platform](https://img.shields.io/badge/Platform-Linux-orange)
 ![Framework](https://img.shields.io/badge/Web-Flask-lightgrey)
 ![Status](https://img.shields.io/badge/Status-Under%20Development-yellow)
-![License](https://img.shields.io/badge/License-TBD-red)
 
 > **Status:** 🚧 Under Development  
 > **Release:** v0.1.0-alpha  
-> **Scope:** Academic / Educational Security Project
 
 ---
 
@@ -34,24 +32,24 @@ The goal is to provide a **simple, event-driven FIM tool** suitable for:
 
 ---
 
-## ✨ Key Features
+## Key Features
 
-- 📂 **Directory Monitoring**  
+- **Directory Monitoring**  
   User-defined directories are monitored for file system events
 
-- ⚡ **Event-Based Detection**  
+- **Event-Based Detection**  
   Uses Linux kernel notifications via `pyinotify`
 
-- 🧾 **Baseline Management**  
-  JSON-based baseline containing SHA-256 file hashes
+- **Baseline Management**  
+  SQLite-based baseline containing SHA-256 file hashes
 
-- 🚨 **Alert Logging**  
+- **Alert Logging**  
   Timestamped logs for detected integrity violations
 
-- 🌐 **Web Dashboard (Flask)**  
+- **Web Dashboard**  
   Displays recent file integrity alerts
 
-- 🔁 **Background Execution**  
+- **Background Execution**  
   Designed to run as a daemon (systemd support planned)
 
 ---
@@ -95,7 +93,7 @@ The goal is to provide a **simple, event-driven FIM tool** suitable for:
 
 ✔ Linux-only support  
 ✔ Single-host monitoring  
-✔ Local JSON baseline  
+✔ Local DB baseline  
 ✔ Basic alert dashboard  
 
 ❌ No notification system  
@@ -106,7 +104,7 @@ The goal is to provide a **simple, event-driven FIM tool** suitable for:
 
 ## Planned Enhancements
 
-- Email / Telegram alerts
+- Email alerts
 - Encrypted baseline storage
 - Database-backed logging
 - Role-based authentication
