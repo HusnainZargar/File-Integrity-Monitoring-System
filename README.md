@@ -6,7 +6,7 @@
 ![Status](https://img.shields.io/badge/Status-Under%20Development-yellow)
 
 > **Status:** 🚧 Under Development  
-> **Release:** v0.1.0-alpha  
+> **Release:** v0.2.0-alpha
 
 ---
 
@@ -26,67 +26,118 @@ The goal is to provide a **simple, event-driven FIM tool** suitable for:
 
 - Detect file integrity violations in real time
 - Avoid resource-heavy polling mechanisms
-- Maintain a **baseline of SHA-256 file hashes**
+- Maintain a baseline of file attributes including SHA-256 hashes, ownership, permissions, and more
 - Log and visualize integrity alerts through a web interface
 - Run silently as a background service on Linux
 
 ---
 
-## Key Features
+## ✨ Key Features
 
-- **Directory Monitoring**  
-  User-defined directories are monitored for file system events
+### Directory Monitoring
+- User-defined directories monitored recursively
+- Supports dynamic addition of new directories
 
-- **Event-Based Detection**  
-  Uses Linux kernel notifications via `pyinotify`
+### Event-Based Detection
+- Uses Linux kernel notifications via **pyinotify**
+- Detects:
+  - File creation
+  - File modification
+  - File deletion
+  - Metadata changes (`IN_ATTRIB`)
+  - Move / rename events
 
-- **Baseline Management**  
-  SQLite-based baseline containing SHA-256 file hashes
+### Baseline Management
+- SQLite-based persistent baseline
+- Stores comprehensive file attributes:
+  - SHA-256 hash
+  - Owner
+  - Group
+  - Permissions (mode)
+  - SUID/SGID
+  - File size
+  - Modification time (mtime)
 
-- **Alert Logging**  
-  Timestamped logs for detected integrity violations
+### Alert Logging
+- Timestamped alerts stored in SQLite
+- Detailed JSON payloads containing:
+  - Old vs new attributes
+  - Change context (what changed and how)
 
-- **Web Dashboard**  
-  Displays recent file integrity alerts
+### Web Dashboard (Flask)
+- Modern dark-themed UI
+- Separate views for **Logs** and **Alerts**
+- Expandable alert rows with:
+  - Side-by-side attribute comparison
+  - Highlighted changed fields
+- Severity indicators:
+  - Critical
+  - High
+  - Medium
+  - Low
+ 
+### Enhanced Change Detection
+- Detects both content and metadata changes
+- Tracks ownership, permissions, group, SUID, size, and timestamps
 
-- **Background Execution**  
-  Designed to run as a daemon (systemd support planned)
+### Move / Rename Handling
+- Supports move/rename detection using:
+  - `IN_MOVED_FROM`
+  - `IN_MOVED_TO`
+- Correlates move events into a single logical alert
+
+### Background Execution
+- Runs as a **systemd service**
+- Persistent monitoring across reboots
 
 ---
 
 ## 🛠️ Technology Stack
 
-| Component | Technology |
-|---------|-----------|
-| Language | Python |
-| Monitoring | pyinotify |
-| Hashing | SHA-256 |
-| Web UI | Flask |
-| Storage | JSON |
-| OS | Linux (Kali Linux tested) |
+| Component       | Technology |
+|-----------------|-----------|
+| Language        | Python |
+| Monitoring      | pyinotify |
+| Hashing         | SHA-256 |
+| Web UI          | Flask + Jinja templating |
+| Styling         | Custom CSS (dark theme) |
+| Storage         | SQLite |
+| Operating System| Linux (tested on Kali Linux) |
 
 ---
 
 ## Methodology
 
-1. **Configuration**
-   - Directories specified via CLI arguments
+### Configuration
+- Directories specified via CLI arguments
+- systemd service for background execution
 
-2. **Initial Baseline Scan**
-   - One-time scan generates file hashes
+### Initial Baseline Scan
+- Recursively walks the target directory
+- Captures full file attributes into baseline
 
-3. **Real-Time Monitoring**
-   - Kernel events trigger integrity checks
+### Real-Time Monitoring
+- Kernel filesystem events trigger integrity checks
+- Supports modify, create, delete, attrib, and move events
 
-4. **Alert Processing**
-   - Changes are logged and stored in memory
+### Alert Processing
+- Compares current attributes with baseline
+- Categorizes alerts:
+  - File Modified
+  - Permission Change
+  - Ownership Change
+  - SUID Change
+  - File Deleted
+  - New File Detected
 
-5. **Web Interface**
-   - Flask displays integrity alerts
+### Web Interface
+- Flask routes:
+  - `/logs` — operational and event logs
+  - `/alerts` — integrity alerts
+- Responsive dashboard with expandable alert details
 
-6. **Deployment**
-   - Intended to run as a systemd service
-
+### Deployment
+- Automated systemd service creation and management
 ---
 
 ## Current Scope (MVP)
