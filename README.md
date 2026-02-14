@@ -12,8 +12,8 @@
 
 ## Overview
 
-This project is a **lightweight File Integrity Monitoring (FIM) system** for Linux environments.  
-It detects **unauthorized file changes** such as creation, modification, deletion, and movement in monitored directories.
+A lightweight **File Integrity Monitoring (FIM)** tool for Linux that detects **real-time file content and metadata changes** using kernel-level notifications.  
+Built for **learning, research, and security tooling demonstrations**, with a modern web dashboard for visibility.
 
 The goal is to provide a **simple, event-driven FIM tool** suitable for:
 - Cybersecurity learning
