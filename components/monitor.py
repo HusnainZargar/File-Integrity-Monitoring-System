@@ -210,4 +210,3 @@ def run_monitor(directory):
     wm.add_watch(directory, mask, rec=True, auto_add=True)
     add_alert("Monitoring started")
     notifier.loop()
-  
