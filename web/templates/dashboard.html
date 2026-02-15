@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Dashboard – FIM{% endblock %}
+{% block content %}
+<h1>Dashboard</h1>
+<div class="metrics-row">
+    <div class="metric-card critical">
+        <div class="count">{{ count_critical }}</div>
+        <div class="label">Critical Alerts</div>
+    </div>
+    <div class="metric-card high">
+        <div class="count">{{ count_high }}</div>
+        <div class="label">High Alerts</div>
+    </div>
+    <div class="metric-card medium">
+        <div class="count">{{ count_medium }}</div>
+        <div class="label">Medium Alerts</div>
+    </div>
+    <div class="metric-card low">
+        <div class="count">{{ count_low }}</div>
+        <div class="label">Low Alerts</div>
+    </div>
+</div>
+<div class="status-strip">
+    <span class="item">Monitoring: <span class="dot"></span> {{ status_monitoring }}</span>
+    <span class="item">Baseline: {{ status_baseline }}</span>
+    <span class="item">Files Tracked: {{ files_tracked }}</span>
+    <span class="item">Last Event: {{ last_event }}</span>
+</div>
+<div class="card">
+    <div class="chart-title">Alert Activity (time series)</div>
+    <div class="chart-container">
+        <canvas id="activityChart"></canvas>
+    </div>
+</div>
+<div class="card">
+    <div class="chart-title">Alert Type Distribution</div>
+    <div class="chart-container" style="max-width: 400px;">
+        <canvas id="typeChart"></canvas>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+(function() {
+    var timeLabels = {{ time_labels | tojson }};
+    var seriesCritical = {{ series_critical | tojson }};
+    var seriesHigh = {{ series_high | tojson }};
+    var seriesMedium = {{ series_medium | tojson }};
+    var seriesLow = {{ series_low | tojson }};
+    new Chart(document.getElementById('activityChart'), {
+        type: 'line',
+        data: {
+            labels: timeLabels,
+            datasets: [
+                { label: 'Critical', data: seriesCritical, borderColor: '#f85149', backgroundColor: 'rgba(248,81,73,0.1)', fill: true, tension: 0.3 },
+                { label: 'High', data: seriesHigh, borderColor: '#db6d28', backgroundColor: 'rgba(219,109,40,0.1)', fill: true, tension: 0.3 },
+                { label: 'Medium', data: seriesMedium, borderColor: '#d29922', backgroundColor: 'rgba(210,153,34,0.1)', fill: true, tension: 0.3 },
+                { label: 'Low', data: seriesLow, borderColor: '#58a6ff', backgroundColor: 'rgba(88,166,255,0.1)', fill: true, tension: 0.3 }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { x: { grid: { color: 'rgba(48,54,61,0.5)' } }, y: { beginAtZero: true, grid: { color: 'rgba(48,54,61,0.5)' } } },
+            plugins: { legend: { labels: { color: '#e6edf3' } } }
+        }
+    });
+    var typeLabels = {{ type_labels | tojson }};
+    var typeValues = {{ type_values | tojson }};
+    new Chart(document.getElementById('typeChart'), {
+        type: 'doughnut',
+        data: { labels: typeLabels, datasets: [{ data: typeValues, backgroundColor: ['#f85149','#db6d28','#d29922','#58a6ff','#3fb950','#a371f7','#8b949e'] }] },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'right', labels: { color: '#e6edf3', padding: 12 } } }
+        }
+    });
+})();
+</script>
+{% endblock %}

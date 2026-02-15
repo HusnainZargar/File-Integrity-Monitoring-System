@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Alerts – FIM{% endblock %}
+{% block content %}
+<h1>Alerts</h1>
+<div class="card">
+    <table>
+        <tr><th>Sev</th><th>Time</th><th>Alert Type</th><th>File Path</th><th></th></tr>
+        {% for alert in alerts %}
+        <tr>
+            <td><span class="sev sev-{{ alert.severity }}" title="{{ alert.severity|upper }}">{% if alert.severity == 'critical' %}🔴{% elif alert.severity == 'high' %}🟧{% elif alert.severity == 'medium' %}🟨{% else %}🟦{% endif %}</span></td>
+            <td>{{ alert.time_short }}</td>
+            <td>{{ alert.alert_type }}</td>
+            <td class="path-cell">{% if alert.path %}<span class="path-text">{{ alert.path }}</span>{% else %}—{% endif %}</td>
+            <td>
+                {% if alert.details and (alert.details.old or alert.details.new) %}
+                <span id="expand-{{ loop.index }}" class="expand" onclick="toggleDetails({{ loop.index }})">+</span>
+                {% endif %}
+            </td>
+        </tr>
+        <tr id="details-{{ loop.index }}" class="details-row">
+            <td colspan="5">
+                {% if alert.details %}
+                <div class="details-inner">
+                    {% if alert.details.old_path and alert.details.new_path %}
+                    <div class="details-path">{{ alert.details.old_path }} → {{ alert.details.new_path }}</div>
+                    {% else %}
+                    <div class="details-path">{{ alert.details.path }}</div>
+                    {% endif %}
+                    {% if alert.details.old and alert.details.new %}
+                    <h4>Attribute changes (old → new)</h4>
+                    <div class="attr-table-wrap">
+                    <table class="attr-table">
+                        <tr><th class="attr-name">Attribute</th><th>Old value</th><th>New value</th></tr>
+                        {% for key in alert.details.old.keys() %}
+                        <tr {% if alert.details.old[key] != alert.details.new[key] %}class="changed"{% endif %}>
+                            <td class="attr-name">{{ key }}</td>
+                            <td class="attr-old" title="{{ alert.details.old[key] if key != 'mtime' else (alert.details.old[key]|unixtime) }}">{% if key == 'mtime' %}{{ alert.details.old[key]|unixtime }}{% else %}{{ alert.details.old[key] }}{% endif %}</td>
+                            <td class="attr-new" title="{{ alert.details.new[key] if key != 'mtime' else (alert.details.new[key]|unixtime) }}">{% if key == 'mtime' %}{{ alert.details.new[key]|unixtime }}{% else %}{{ alert.details.new[key] }}{% endif %}</td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                    </div>
+                    {% elif alert.details.old %}
+                    <h4>Old baseline (deleted)</h4>
+                    <div class="attr-table-wrap">
+                    <table class="attr-table">
+                        <tr><th class="attr-name">Attribute</th><th>Value</th></tr>
+                        {% for key, value in alert.details.old.items() %}
+                        <tr><td class="attr-name">{{ key }}</td><td class="attr-old" title="{{ value|unixtime if key == 'mtime' else value }}">{% if key == 'mtime' %}{{ value|unixtime }}{% else %}{{ value }}{% endif %}</td></tr>
+                        {% endfor %}
+                    </table>
+                    </div>
+                    {% elif alert.details.new %}
+                    <h4>New attributes</h4>
+                    <div class="attr-table-wrap">
+                    <table class="attr-table">
+                        <tr><th class="attr-name">Attribute</th><th>Value</th></tr>
+                        {% for key, value in alert.details.new.items() %}
+                        <tr><td class="attr-name">{{ key }}</td><td class="attr-new" title="{{ value|unixtime if key == 'mtime' else value }}">{% if key == 'mtime' %}{{ value|unixtime }}{% else %}{{ value }}{% endif %}</td></tr>
+                        {% endfor %}
+                    </table>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+<p class="refresh-hint">Refresh to update.</p>
+{% endblock %}

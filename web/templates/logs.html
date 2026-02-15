@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Logs – FIM{% endblock %}
+{% block content %}
+<h1>All Logs</h1>
+<div class="card">
+    <table>
+        <tr><th>Timestamp</th><th>Message</th></tr>
+        {% for log in logs %}
+        <tr>
+            <td>{{ log.timestamp }}</td>
+            <td>
+                {% if log.details and log.details.path %}
+                    {% if 'Changed' in log.message or 'Initial change' in log.message %}
+                    <span class="log-type">File Change:</span> {{ log.details.path }}
+                    {% elif 'New' in log.message or 'Initial new' in log.message or 'untracked' in log.message %}
+                    <span class="log-type">New File:</span> {{ log.details.path }}
+                    {% elif 'Deleted' in log.message %}
+                    <span class="log-type">File Deleted:</span> {{ log.details.path }}
+                    {% elif 'Moved' in log.message %}
+                    <span class="log-type">File Moved:</span> {{ log.details.path }}
+                    {% else %}
+                    {{ log.message }}
+                    {% endif %}
+                {% else %}
+                {{ log.message }}
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+<p class="refresh-hint">Refresh to update.</p>
+{% endblock %}
