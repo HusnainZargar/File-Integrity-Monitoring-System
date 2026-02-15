@@ -3,7 +3,7 @@ import threading
 import subprocess
 import os
 from components.monitor import run_monitor
-from components.web import app
+from web.app import app
 
 def setup_systemd_service(directory):
     print("Step 1: Setting up systemd service...")
@@ -37,7 +37,8 @@ WantedBy=multi-user.target
     subprocess.run(['sudo', 'systemctl', 'start', 'fim'])
    
     print("Step 2: Systemd service set up and started.")
-    print("The script will now exit; the service runs in the background.")
+    print("Access the web Dashboard at: https://localhost:5000")
+    print("Default Creds are admin:admin")
     exit(0)  # Exit after setup to avoid duplicate run
 
 if __name__ == '__main__':
@@ -65,4 +66,3 @@ if __name__ == '__main__':
     log.disabled = True
     app.logger.disabled = True
     app.run(host='127.0.0.1', port=5000, debug=False, use_reloader=False, threaded=True)
-  
