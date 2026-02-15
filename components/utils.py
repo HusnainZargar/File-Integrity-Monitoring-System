@@ -10,15 +10,60 @@ def init_db():
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS baselines (path TEXT PRIMARY KEY, attributes TEXT)''')
     c.execute('''CREATE TABLE IF NOT EXISTS logs (timestamp TEXT, message TEXT)''')
-    
+    c.execute('''CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL
+    )''')
     # Add details column if missing
     c.execute("PRAGMA table_info(logs)")
     columns = [col[1] for col in c.fetchall()]
     if 'details' not in columns:
         c.execute("ALTER TABLE logs ADD COLUMN details TEXT")
-    
     conn.commit()
     conn.close()
+
+
+def get_user(username):
+    """Return user row as dict with username, password_hash or None."""
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    c.execute("SELECT username, password_hash FROM users WHERE username = ?", (username,))
+    row = c.fetchone()
+    conn.close()
+    if not row:
+        return None
+    return {'username': row[0], 'password_hash': row[1]}
+
+
+def update_user_password(username, password_hash):
+    """Update password hash for the given username."""
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    c.execute("UPDATE users SET password_hash = ? WHERE username = ?", (password_hash, username))
+    conn.commit()
+    conn.close()
+
+
+def create_user(username, password_hash):
+    """Insert a new user. Fails if username exists."""
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    try:
+        c.execute("INSERT INTO users (username, password_hash) VALUES (?, ?)", (username, password_hash))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def user_count():
+    """Return number of users (for seeding default admin)."""
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    c.execute("SELECT COUNT(*) FROM users")
+    n = c.fetchone()[0]
+    conn.close()
+    return n
 
 
 def load_baseline():
