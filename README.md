@@ -6,7 +6,7 @@
 ![Status](https://img.shields.io/badge/Status-Under%20Development-yellow)
 
 > **Status:** 🚧 Under Development  
-> **Release:** v0.2.0-alpha
+> **Release:** v0.3.0-alpha
 
 ---
 
