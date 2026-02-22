@@ -34,7 +34,6 @@ def _ensure_db_and_admin():
 # Register blueprint after app is created to avoid circular import
 from web.routes import bp
 app.register_blueprint(bp)
-
 # Ensure users table and default admin exist on first request (or we could do at import time)
 with app.app_context():
     _ensure_db_and_admin()
