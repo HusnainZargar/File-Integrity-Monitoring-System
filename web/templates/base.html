@@ -10,7 +10,7 @@
     <style>
         :root {
             --bg-page: #0f1419;
-            --bg-sidebar: #161b22;
+            --bg-sidebar: #0d1117;
             --bg-card: #1c2128;
             --bg-row: #21262d;
             --bg-row-alt: #161b22;
@@ -19,7 +19,9 @@
             --text-muted: #8b949e;
             --accent: #58a6ff;
             --accent-soft: rgba(88, 166, 255, 0.15);
+            --accent-glow: rgba(88, 166, 255, 0.35);
             --danger: #f85149;
+            --danger-soft: rgba(248, 81, 73, 0.15);
             --warn: #d29922;
             --warn-bg: rgba(210, 153, 34, 0.2);
             --radius: 12px;
@@ -37,39 +39,99 @@
         }
         .container { display: flex; min-height: 100vh; }
         .sidebar {
-            width: 260px;
+            width: 280px;
             background: var(--bg-sidebar);
             border-right: 1px solid var(--border);
-            padding: 24px 0;
+            padding: 0;
             position: fixed;
             height: 100%;
             overflow-y: auto;
+            display: flex;
+            flex-direction: column;
         }
-        .sidebar h2 {
-            margin: 0 20px 24px;
-            font-size: 0.75rem;
+        .sidebar-header {
+            padding: 24px 20px 20px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        .sidebar-brand {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: -0.02em;
+            margin: 0 0 2px;
+        }
+        .sidebar-product {
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+            margin: 0 0 6px;
+            line-height: 1.35;
+        }
+        .sidebar-tagline {
+            font-size: 0.6875rem;
+            color: var(--text-muted);
+            opacity: 0.85;
+            margin: 0;
+            line-height: 1.4;
+        }
+        .sidebar-nav {
+            flex: 1;
+            padding: 16px 0;
+        }
+        .sidebar-section {
+            margin-bottom: 20px;
+        }
+        .sidebar-section-label {
+            font-size: 0.625rem;
             font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.08em;
+            letter-spacing: 0.1em;
             color: var(--text-muted);
+            margin: 0 20px 8px;
+            opacity: 0.9;
         }
-        .sidebar ul { list-style: none; padding: 0; margin: 0; }
+        .sidebar ul { list-style: none; padding: 0 12px; margin: 0; }
         .sidebar li { margin: 0; }
-        .sidebar a {
+        .sidebar-nav a {
             color: var(--text-muted);
             text-decoration: none;
             font-size: 0.9375rem;
             font-weight: 500;
             display: block;
-            padding: 10px 20px;
-            margin: 2px 12px;
+            padding: 10px 16px;
+            margin: 2px 0;
             border-radius: var(--radius-sm);
-            transition: color 0.15s, background 0.15s;
+            transition: color 0.15s, background 0.15s, border-color 0.15s;
+            border-left: 3px solid transparent;
         }
-        .sidebar a:hover { color: var(--text); background: var(--bg-row); }
+        .sidebar-nav a:hover { color: var(--text); background: var(--bg-row); }
+        .sidebar-nav a.active {
+            color: var(--accent);
+            font-weight: 600;
+            background: var(--accent-soft);
+            border-left-color: var(--accent);
+            box-shadow: 0 0 12px var(--accent-glow);
+        }
+        .sidebar-nav a.coming-soon {
+            color: var(--text-muted);
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+        .sidebar-nav a.coming-soon:hover { background: transparent; color: var(--text-muted); }
+        .sidebar-session {
+            padding: 16px 12px;
+            border-top: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        .sidebar-session a {
+            color: var(--danger);
+            font-weight: 500;
+        }
+        .sidebar-session a:hover { background: var(--danger-soft); color: var(--danger); }
+        .sidebar-session a.active { color: var(--danger); border-left-color: var(--danger); }
         .main-content {
             flex: 1;
-            margin-left: 260px;
+            margin-left: 280px;
             min-width: 0;
             padding: 28px 32px 64px;
             overflow-y: auto;
@@ -207,6 +269,7 @@
         }
         .status-strip .item { display: flex; align-items: center; gap: 8px; }
         .status-strip .dot { width: 8px; height: 8px; border-radius: 50%; background: #3fb950; }
+        .status-strip .dot.dot-paused { background: var(--warn); }
         .chart-container { position: relative; height: 320px; margin-bottom: 24px; }
         .chart-title { font-size: 0.9375rem; font-weight: 600; margin-bottom: 12px; color: var(--text); }
         footer {
@@ -216,13 +279,13 @@
             padding: 16px;
             border-top: 1px solid var(--border);
             background: var(--bg-card);
-            margin-left: 260px;
+            margin-left: 280px;
         }
         .error-msg { color: #f85149; font-size: 0.875rem; margin-bottom: 12px; }
         .success-msg { color: #3fb950; font-size: 0.875rem; margin-bottom: 12px; }
         @media (max-width: 768px) {
             .container { flex-direction: column; }
-            .sidebar { width: 100%; height: auto; position: relative; border-right: none; border-bottom: 1px solid var(--border); }
+            .sidebar { width: 100%; height: auto; position: relative; border-right: none; border-bottom: 1px solid var(--border); flex-direction: column; }
             .main-content { margin-left: 0; padding-bottom: 24px; }
             footer { margin-left: 0; }
             .metrics-row { grid-template-columns: 1fr 1fr; }
@@ -246,19 +309,45 @@
 <body>
     <div class="container">
         <nav class="sidebar">
-            <h2>FIM Dashboard</h2>
-            <ul>
-                <li><a href="{{ url_for('routes.dashboard') }}">Dashboard</a></li>
-                <li><a href="{{ url_for('routes.show_logs') }}">Logs</a></li>
-                <li><a href="{{ url_for('routes.show_alerts') }}">Alerts</a></li>
-                <li><a href="{{ url_for('routes.change_password') }}">Change Password</a></li>
-                <li><a href="{{ url_for('routes.logout') }}">Logout</a></li>
-            </ul>
+            <div class="sidebar-header">
+                <h1 class="sidebar-brand">FIM</h1>
+                <p class="sidebar-product">File Integrity Monitoring System</p>
+                <p class="sidebar-tagline">Real-time file integrity and metadata monitoring</p>
+            </div>
+            <div class="sidebar-nav">
+                <div class="sidebar-section">
+                    <ul>
+                        <li><a href="{{ url_for('routes.dashboard') }}" class="{{ 'active' if request.endpoint == 'routes.dashboard' else '' }}">📊 Dashboard</a></li>
+                        <li><a href="{{ url_for('routes.show_alerts') }}" class="{{ 'active' if request.endpoint == 'routes.show_alerts' else '' }}">🚨 Alerts</a></li>
+                        <li><a href="{{ url_for('routes.show_logs') }}" class="{{ 'active' if request.endpoint == 'routes.show_logs' else '' }}">📜 Logs</a></li>
+                    </ul>
+                </div>
+                <div class="sidebar-section">
+                    <p class="sidebar-section-label">ANALYSIS</p>
+                    <ul>
+                        <li><a href="#" class="coming-soon" title="Coming Soon">📁 File Analysis</a></li>
+                        <li><a href="#" class="coming-soon" title="Coming Soon">📈 Statistics</a></li>
+                    </ul>
+                </div>
+                <div class="sidebar-section">
+                    <p class="sidebar-section-label">SYSTEM</p>
+                    <ul>
+                        <li><a href="{{ url_for('routes.settings') }}" class="{{ 'active' if request.endpoint == 'routes.settings' else '' }}">⚙️ Settings</a></li>
+                        <li><a href="{{ url_for('routes.account') }}" class="{{ 'active' if request.endpoint in ('routes.account', 'routes.change_password') else '' }}">🔐 Account</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="sidebar-session">
+                <p class="sidebar-section-label">SESSION</p>
+                <ul>
+                    <li><a href="{{ url_for('routes.logout') }}">🚪 Logout</a></li>
+                </ul>
+            </div>
         </nav>
         <div class="main-content">
             {% block content %}{% endblock %}
         </div>
     </div>
-    <footer>v0.3.0-alpha</footer>
+    <footer>v0.4.0-alpha</footer>
 </body>
 </html>
