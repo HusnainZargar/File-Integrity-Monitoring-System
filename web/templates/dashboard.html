@@ -21,7 +21,7 @@
     </div>
 </div>
 <div class="status-strip">
-    <span class="item">Monitoring: <span class="dot"></span> {{ status_monitoring }}</span>
+    <span class="item">Monitoring: <span class="dot {{ 'dot-paused' if status_monitoring == 'PAUSED' else '' }}"></span> {{ status_monitoring }}</span>
     <span class="item">Baseline: {{ status_baseline }}</span>
     <span class="item">Files Tracked: {{ files_tracked }}</span>
     <span class="item">Last Event: {{ last_event }}</span>
