@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Account – FIM{% endblock %}
+{% block content %}
+<h1>🔐 Account</h1>
+<p class="account-intro">Identity and credentials. Change username or password below.</p>
+
+<section class="card account-section">
+    <h2 class="card-heading">PROFILE</h2>
+    <table class="profile-table">
+        <tr><td class="label">Username</td><td><strong>{{ username }}</strong></td></tr>
+        <tr><td class="label">Last Login</td><td>{{ last_login }}</td></tr>
+    </table>
+</section>
+
+<section class="card account-section">
+    <h2 class="card-heading">CHANGE PASSWORD</h2>
+    {% if pw_success %}<p class="success-msg">Password updated successfully.</p>{% endif %}
+    {% if pw_error %}<p class="error-msg">{{ pw_error }}</p>{% endif %}
+    <form method="post" action="{{ url_for('routes.account') }}">
+        <input type="hidden" name="account_submit" value="password">
+        <label>Current Password</label>
+        <input type="password" name="current_password" required class="account-input">
+        <label>New Password</label>
+        <input type="password" name="new_password" required minlength="6" class="account-input">
+        <label>Confirm New Password</label>
+        <input type="password" name="confirm_password" required minlength="6" class="account-input">
+        <button type="submit" class="btn btn-primary">Update Password</button>
+    </form>
+</section>
+
+<section class="card account-section">
+    <h2 class="card-heading">CHANGE USERNAME</h2>
+    {% if un_success %}<p class="success-msg">Username updated. You are now logged in as {{ username }}.</p>{% endif %}
+    {% if un_error %}<p class="error-msg">{{ un_error }}</p>{% endif %}
+    <form method="post" action="{{ url_for('routes.account') }}">
+        <input type="hidden" name="account_submit" value="username">
+        <label>Current Password</label>
+        <input type="password" name="password_for_username" required class="account-input">
+        <label>New Username</label>
+        <input type="text" name="new_username" value="{{ username }}" required class="account-input">
+        <button type="submit" class="btn btn-primary">Update Username</button>
+    </form>
+</section>
+
+<section class="card account-section">
+    <h2 class="card-heading">SESSION</h2>
+    <a href="{{ url_for('routes.logout') }}" class="btn btn-danger">Logout</a>
+    <p class="section-desc">Destroy session and redirect to login.</p>
+</section>
+
+<style>
+.account-intro { color: var(--text-muted); font-size: 0.9375rem; margin: 0 0 24px; line-height: 1.5; }
+.card.account-section { padding: 24px; margin-bottom: 24px; }
+.card-heading { font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin: 0 0 20px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+.profile-table { border-collapse: collapse; width: 100%; margin-top: 12px; }
+.profile-table td { padding: 12px 16px 12px 0; vertical-align: top; border-bottom: 1px solid var(--border); }
+.profile-table tr:last-child td { border-bottom: none; }
+.profile-table .label { color: var(--text-muted); width: 140px; }
+.account-section label { display: block; font-size: 0.875rem; color: var(--text-muted); margin-bottom: 6px; margin-top: 16px; }
+.account-section label:first-of-type { margin-top: 0; }
+.account-input { display: block; width: 100%; max-width: 320px; padding: 10px 12px; margin-bottom: 4px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-row); color: var(--text); }
+.account-input:focus { outline: none; border-color: var(--accent); }
+.section-desc { color: var(--text-muted); font-size: 0.8125rem; margin: 12px 0 0; }
+.btn { padding: 10px 20px; border-radius: var(--radius-sm); border: none; cursor: pointer; font-weight: 600; font-size: 0.875rem; text-decoration: none; display: inline-block; margin-top: 12px; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-danger { background: var(--danger); color: #fff; }
+</style>
+{% endblock %}
