@@ -1,23 +1,52 @@
 {% extends "base.html" %}
 {% block title %}Logs – FIM{% endblock %}
 {% block content %}
-<h1>All Logs</h1>
+<h1>📜 Logs</h1>
+
+<!-- Search bar -->
+<form method="get" action="{{ url_for('routes.show_logs') }}" class="search-bar">
+    <input type="text" name="search" class="search-input"
+           placeholder="Search logs…" value="{{ search }}">
+    <button type="submit" class="search-btn">Search</button>
+    {% if search %}
+    <a href="{{ url_for('routes.show_logs') }}" class="search-clear">✕ Clear</a>
+    {% endif %}
+</form>
+
 <div class="card">
     <table>
-        <tr><th>Timestamp</th><th>Message</th></tr>
+        <thead>
+            <tr>
+                <th style="width:160px;">Timestamp</th>
+                <th style="width:80px;">Type</th>
+                <th>Message</th>
+            </tr>
+        </thead>
+        <tbody>
         {% for log in logs %}
         <tr>
             <td>{{ log.timestamp }}</td>
             <td>
+                {% if log.event_type == 'alert' %}
+                <span style="background:rgba(248,81,73,0.15);color:#f85149;padding:3px 8px;border-radius:5px;font-size:0.7rem;font-weight:700;text-transform:uppercase;">ALERT</span>
+                {% else %}
+                <span style="background:rgba(88,166,255,0.1);color:var(--text-muted);padding:3px 8px;border-radius:5px;font-size:0.7rem;font-weight:700;text-transform:uppercase;">INFO</span>
+                {% endif %}
+            </td>
+            <td>
                 {% if log.details and log.details.path %}
                     {% if 'Changed' in log.message or 'Initial change' in log.message %}
-                    <span class="log-type">File Change:</span> {{ log.details.path }}
-                    {% elif 'New' in log.message or 'Initial new' in log.message or 'untracked' in log.message %}
-                    <span class="log-type">New File:</span> {{ log.details.path }}
+                    <span class="log-type">File Change:</span>
+                    <span class="path-text">{{ log.details.path }}</span>
+                    {% elif 'New' in log.message or 'untracked' in log.message %}
+                    <span class="log-type">New File:</span>
+                    <span class="path-text">{{ log.details.path }}</span>
                     {% elif 'Deleted' in log.message %}
-                    <span class="log-type">File Deleted:</span> {{ log.details.path }}
-                    {% elif 'Moved' in log.message %}
-                    <span class="log-type">File Moved:</span> {{ log.details.path }}
+                    <span class="log-type">File Deleted:</span>
+                    <span class="path-text">{{ log.details.path }}</span>
+                    {% elif 'Moved' in log.message or 'Renamed' in log.message %}
+                    <span class="log-type">File Moved:</span>
+                    <span class="path-text">{{ log.details.path }}</span>
                     {% else %}
                     {{ log.message }}
                     {% endif %}
@@ -26,8 +55,34 @@
                 {% endif %}
             </td>
         </tr>
+        {% else %}
+        <tr><td colspan="3" style="text-align:center; color: var(--text-muted); padding: 32px;">
+            {% if search %}No logs matching "{{ search }}".{% else %}No logs yet.{% endif %}
+        </td></tr>
         {% endfor %}
+        </tbody>
     </table>
+
+    <!-- Pagination -->
+    <div class="pagination">
+        <span>Showing {{ logs|length }} of {{ total }} entr{{ 'ies' if total != 1 else 'y' }}
+            {% if search %} matching "{{ search }}"{% endif %}
+        </span>
+        <div class="pagination-links">
+            <a href="{{ url_for('routes.show_logs', page=page-1, search=search) }}"
+               class="page-btn {{ 'disabled' if page <= 1 else '' }}">‹ Prev</a>
+            {% for p in range(1, total_pages + 1) %}
+                {% if p == page %}
+                <span class="page-btn active">{{ p }}</span>
+                {% elif p == 1 or p == total_pages or (p >= page - 2 and p <= page + 2) %}
+                <a href="{{ url_for('routes.show_logs', page=p, search=search) }}" class="page-btn">{{ p }}</a>
+                {% elif p == page - 3 or p == page + 3 %}
+                <span style="color:var(--text-muted); padding: 0 4px;">…</span>
+                {% endif %}
+            {% endfor %}
+            <a href="{{ url_for('routes.show_logs', page=page+1, search=search) }}"
+               class="page-btn {{ 'disabled' if page >= total_pages else '' }}">Next ›</a>
+        </div>
+    </div>
 </div>
-<p class="refresh-hint">Refresh to update.</p>
 {% endblock %}
