@@ -1,36 +1,40 @@
-"""Authentication: SHA256 password hashing, session, and DB-backed users."""
-import hashlib
+"""Authentication: PBKDF2 password hashing via werkzeug, session, DB-backed users."""
 from functools import wraps
 from flask import session, redirect, url_for
+from werkzeug.security import generate_password_hash, check_password_hash
 
-from components.utils import get_user, update_user_password, create_user, user_count, update_last_login, update_username
+from components.utils import (
+    get_user,
+    update_user_password,
+    create_user,
+    user_count,
+    update_last_login,
+    update_username,
+)
 
 
 def hash_password(password):
-    """Return SHA256 hex digest of password (UTF-8 encoded)."""
-    return hashlib.sha256(password.encode('utf-8')).hexdigest()
+    """Return a salted PBKDF2 hash of the password."""
+    return generate_password_hash(password)
 
 
 def verify_user(username, password):
-    """Return True if username exists and password hash matches."""
+    """Return True if username exists and password matches stored hash."""
     user = get_user(username)
     if not user:
         return False
-    return user['password_hash'] == hash_password(password)
+    return check_password_hash(user['password_hash'], password)
 
 
 def update_login_timestamp(username):
-    """Call after successful login."""
     update_last_login(username)
 
 
 def ensure_default_admin():
-    """If no users exist, create admin with default password (hashed). One-time seed only."""
+    """Seed admin user on first run. Uses secure hash."""
     if user_count() > 0:
         return
-    # Seed: only place we use a default; stored as hash, never compared as plain text
-    default_password_hash = hash_password('admin')
-    create_user('admin', default_password_hash)
+    create_user('admin', hash_password('admin'))
 
 
 def login_required(f):
@@ -44,21 +48,19 @@ def login_required(f):
 
 def change_password_for_user(username, current_password, new_password):
     """
-    Update password for username. Returns (True, None) on success,
-    (False, 'error message') on failure.
+    Returns (True, None) on success, (False, 'error message') on failure.
     """
     if not verify_user(username, current_password):
         return False, 'Current password is incorrect.'
     if not new_password or len(new_password) < 6:
         return False, 'New password must be at least 6 characters.'
-    new_hash = hash_password(new_password)
-    update_user_password(username, new_hash)
+    update_user_password(username, hash_password(new_password))
     return True, None
 
 
 def change_username_for_user(current_username, new_username, password):
     """
-    Change username. Returns (True, None) on success, (False, 'error message') on failure.
+    Returns (True, None) on success, (False, 'error message') on failure.
     """
     if not verify_user(current_username, password):
         return False, 'Password is incorrect.'
