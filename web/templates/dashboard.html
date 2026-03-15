@@ -1,8 +1,125 @@
 {% extends "base.html" %}
 {% block title %}Dashboard – FIM{% endblock %}
+{% block head %}
+<style>
+    .dash-section-label {
+        font-size: 0.6875rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--text-muted);
+        margin: 0 0 12px;
+    }
+    .metric-card {
+        background: var(--bg-row-alt);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 22px 20px 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .metric-card .count {
+        font-size: 2.25rem;
+        font-weight: 700;
+        line-height: 1;
+        letter-spacing: -0.02em;
+    }
+    .metric-card .label {
+        font-size: 0.8125rem;
+        color: var(--text-muted);
+        font-weight: 500;
+    }
+    .metric-card.critical .count { color: #f85149; }
+    .metric-card.high    .count { color: #db6d28; }
+    .metric-card.medium  .count { color: #d29922; }
+    .metric-card.low     .count { color: #58a6ff; }
+
+    .status-strip {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0;
+        background: var(--bg-row-alt);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        overflow: hidden;
+        margin-bottom: 24px;
+    }
+    .status-item {
+        flex: 1;
+        min-width: 160px;
+        padding: 14px 20px;
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .status-item:last-child { border-right: none; }
+    .status-item .si-label {
+        font-size: 0.625rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.09em;
+        color: var(--text-muted);
+    }
+    .status-item .si-value {
+        font-size: 0.9375rem;
+        font-weight: 600;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 7px;
+    }
+    .dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        background: #3fb950;
+        flex-shrink: 0;
+        box-shadow: 0 0 6px rgba(63,185,80,0.6);
+    }
+    .dot.dot-paused {
+        background: var(--warn);
+        box-shadow: 0 0 6px rgba(210,153,34,0.5);
+    }
+
+    .charts-grid {
+        display: grid;
+        grid-template-columns: 1fr 340px;
+        gap: 20px;
+        margin-bottom: 0;
+    }
+    .chart-card {
+        background: var(--bg-row-alt);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 20px 20px 16px;
+    }
+    .chart-card-title {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--text);
+        margin: 0 0 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .chart-card-title span {
+        font-size: 0.75rem;
+        font-weight: 400;
+        color: var(--text-muted);
+    }
+    .chart-wrap {
+        position: relative;
+        width: 100%;
+    }
+    .chart-wrap-line  { height: 280px; }
+    .chart-wrap-donut { height: 260px; }
+</style>
+{% endblock %}
 {% block content %}
 <h1>Dashboard</h1>
-<div class="metrics-row">
+
+<!-- Metric cards -->
+<div class="metrics-row" style="margin-bottom:20px;">
     <div class="metric-card critical">
         <div class="count">{{ count_critical }}</div>
         <div class="label">Critical Alerts</div>
@@ -20,59 +137,222 @@
         <div class="label">Low Alerts</div>
     </div>
 </div>
+
+<!-- Status strip -->
 <div class="status-strip">
-    <span class="item">Monitoring: <span class="dot {{ 'dot-paused' if status_monitoring == 'PAUSED' else '' }}"></span> {{ status_monitoring }}</span>
-    <span class="item">Baseline: {{ status_baseline }}</span>
-    <span class="item">Files Tracked: {{ files_tracked }}</span>
-    <span class="item">Last Event: {{ last_event }}</span>
-</div>
-<div class="card">
-    <div class="chart-title">Alert Activity (time series)</div>
-    <div class="chart-container">
-        <canvas id="activityChart"></canvas>
+    <div class="status-item">
+        <div class="si-label">Monitoring</div>
+        <div class="si-value">
+            <span class="dot {{ 'dot-paused' if status_monitoring == 'PAUSED' else '' }}"></span>
+            {{ status_monitoring }}
+        </div>
+    </div>
+    <div class="status-item">
+        <div class="si-label">Baseline</div>
+        <div class="si-value">{{ status_baseline }}</div>
+    </div>
+    <div class="status-item">
+        <div class="si-label">Files Tracked</div>
+        <div class="si-value">{{ files_tracked }}</div>
+    </div>
+    <div class="status-item">
+        <div class="si-label">Last Event</div>
+        <div class="si-value" style="font-size:0.8125rem;font-weight:500;color:var(--text-muted);">{{ last_event }}</div>
     </div>
 </div>
-<div class="card">
-    <div class="chart-title">Alert Type Distribution</div>
-    <div class="chart-container" style="max-width: 400px;">
-        <canvas id="typeChart"></canvas>
+
+<!-- Charts -->
+<div class="charts-grid">
+    <!-- Line chart -->
+    <div class="chart-card">
+        <div class="chart-card-title">
+            Alert Activity
+            <span>last 24 hours</span>
+        </div>
+        <div class="chart-wrap chart-wrap-line">
+            <canvas id="activityChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Doughnut chart -->
+    <div class="chart-card">
+        <div class="chart-card-title">
+            Alert Types
+        </div>
+        <div class="chart-wrap chart-wrap-donut">
+            <canvas id="typeChart"></canvas>
+        </div>
     </div>
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
-(function() {
-    var timeLabels = {{ time_labels | tojson }};
-    var seriesCritical = {{ series_critical | tojson }};
-    var seriesHigh = {{ series_high | tojson }};
-    var seriesMedium = {{ series_medium | tojson }};
-    var seriesLow = {{ series_low | tojson }};
+(function () {
+    var GRID   = 'rgba(48,54,61,0.6)';
+    var TICK   = '#8b949e';
+    var TEXT   = '#e6edf3';
+
+    // ── Line chart ──────────────────────────────────────────────
+    var timeLabels    = {{ time_labels    | tojson }};
+    var seriesCrit    = {{ series_critical | tojson }};
+    var seriesHigh    = {{ series_high    | tojson }};
+    var seriesMed     = {{ series_medium  | tojson }};
+    var seriesLow     = {{ series_low     | tojson }};
+
     new Chart(document.getElementById('activityChart'), {
         type: 'line',
         data: {
             labels: timeLabels,
             datasets: [
-                { label: 'Critical', data: seriesCritical, borderColor: '#f85149', backgroundColor: 'rgba(248,81,73,0.1)', fill: true, tension: 0.3 },
-                { label: 'High', data: seriesHigh, borderColor: '#db6d28', backgroundColor: 'rgba(219,109,40,0.1)', fill: true, tension: 0.3 },
-                { label: 'Medium', data: seriesMedium, borderColor: '#d29922', backgroundColor: 'rgba(210,153,34,0.1)', fill: true, tension: 0.3 },
-                { label: 'Low', data: seriesLow, borderColor: '#58a6ff', backgroundColor: 'rgba(88,166,255,0.1)', fill: true, tension: 0.3 }
+                {
+                    label: 'Critical',
+                    data: seriesCrit,
+                    borderColor: '#f85149',
+                    backgroundColor: 'rgba(248,81,73,0.08)',
+                    fill: true, tension: 0.35, pointRadius: 3,
+                    pointHoverRadius: 5,
+                    pointBackgroundColor: '#f85149',
+                    borderWidth: 2,
+                },
+                {
+                    label: 'High',
+                    data: seriesHigh,
+                    borderColor: '#db6d28',
+                    backgroundColor: 'rgba(219,109,40,0.08)',
+                    fill: true, tension: 0.35, pointRadius: 3,
+                    pointHoverRadius: 5,
+                    pointBackgroundColor: '#db6d28',
+                    borderWidth: 2,
+                },
+                {
+                    label: 'Medium',
+                    data: seriesMed,
+                    borderColor: '#d29922',
+                    backgroundColor: 'rgba(210,153,34,0.08)',
+                    fill: true, tension: 0.35, pointRadius: 3,
+                    pointHoverRadius: 5,
+                    pointBackgroundColor: '#d29922',
+                    borderWidth: 2,
+                },
+                {
+                    label: 'Low',
+                    data: seriesLow,
+                    borderColor: '#58a6ff',
+                    backgroundColor: 'rgba(88,166,255,0.08)',
+                    fill: true, tension: 0.35, pointRadius: 3,
+                    pointHoverRadius: 5,
+                    pointBackgroundColor: '#58a6ff',
+                    borderWidth: 2,
+                },
             ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            scales: { x: { grid: { color: 'rgba(48,54,61,0.5)' } }, y: { beginAtZero: true, grid: { color: 'rgba(48,54,61,0.5)' } } },
-            plugins: { legend: { labels: { color: '#e6edf3' } } }
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    align: 'end',
+                    labels: {
+                        color: TEXT,
+                        padding: 16,
+                        boxWidth: 12,
+                        boxHeight: 3,
+                        usePointStyle: false,
+                        font: { size: 12 },
+                    }
+                },
+                tooltip: {
+                    backgroundColor: '#1c2128',
+                    borderColor: '#30363d',
+                    borderWidth: 1,
+                    titleColor: TEXT,
+                    bodyColor: TICK,
+                    padding: 12,
+                    cornerRadius: 8,
+                }
+            },
+            scales: {
+                x: {
+                    grid: { color: GRID, drawTicks: false },
+                    border: { display: false },
+                    ticks: {
+                        color: TICK,
+                        font: { size: 11 },
+                        maxRotation: 0,
+                        maxTicksLimit: 12,
+                        padding: 8,
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: { color: GRID, drawTicks: false },
+                    border: { display: false },
+                    ticks: {
+                        color: TICK,
+                        font: { size: 11 },
+                        padding: 8,
+                        stepSize: 1,
+                        precision: 0,
+                    }
+                }
+            }
         }
     });
+
+    // ── Doughnut chart ───────────────────────────────────────────
     var typeLabels = {{ type_labels | tojson }};
     var typeValues = {{ type_values | tojson }};
+
+    if (typeLabels.length === 0) {
+        // Empty state: draw a placeholder ring
+        typeLabels = ['No data'];
+        typeValues = [1];
+    }
+
     new Chart(document.getElementById('typeChart'), {
         type: 'doughnut',
-        data: { labels: typeLabels, datasets: [{ data: typeValues, backgroundColor: ['#f85149','#db6d28','#d29922','#58a6ff','#3fb950','#a371f7','#8b949e'] }] },
+        data: {
+            labels: typeLabels,
+            datasets: [{
+                data: typeValues,
+                backgroundColor: [
+                    '#f85149','#db6d28','#d29922',
+                    '#58a6ff','#3fb950','#a371f7','#8b949e'
+                ],
+                borderWidth: 3,
+                borderColor: '#161b22',
+                hoverOffset: 6,
+            }]
+        },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { position: 'right', labels: { color: '#e6edf3', padding: 12 } } }
+            cutout: '62%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: TEXT,
+                        padding: 14,
+                        boxWidth: 12,
+                        boxHeight: 12,
+                        font: { size: 12 },
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                    }
+                },
+                tooltip: {
+                    backgroundColor: '#1c2128',
+                    borderColor: '#30363d',
+                    borderWidth: 1,
+                    titleColor: TEXT,
+                    bodyColor: TICK,
+                    padding: 12,
+                    cornerRadius: 8,
+                }
+            }
         }
     });
 })();
