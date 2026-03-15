@@ -10,20 +10,19 @@
 
 <div class="settings-tabs">
     <button type="button" class="tab-btn active" data-tab="paths">Paths</button>
-    <button type="button" class="tab-btn" data-tab="options">Settings</button>
-    <button type="button" class="tab-btn" data-tab="audit">Audit Logs</button>
+    <button type="button" class="tab-btn" data-tab="options">Options</button>
+    <button type="button" class="tab-btn" data-tab="audit">Audit Log</button>
 </div>
 
-<!-- Section 1: Paths (with sub-tabs Monitored Paths | Excluded Paths) -->
+<!-- ── Tab 1: Paths ────────────────────────────────────────── -->
 <section id="tab-paths" class="settings-panel card active">
     <div class="sub-tabs">
         <button type="button" class="sub-tab-btn active" data-subtab="monitored">Monitored Paths</button>
         <button type="button" class="sub-tab-btn" data-subtab="excluded">Excluded Paths</button>
     </div>
 
-    <!-- Monitored Paths sub-panel -->
     <div id="subpanel-monitored" class="sub-panel active">
-        <p class="section-desc">Add absolute file or directory paths to monitor. Path must exist and be readable.</p>
+        <p class="section-desc">Add absolute file or directory paths to monitor. Path must exist and be readable. A baseline is created immediately when a path is added.</p>
         <div class="paths-bar">
             <form method="post" action="{{ url_for('routes.settings') }}" class="add-path-row add-path-top">
                 <input type="hidden" name="action" value="add_path">
@@ -48,7 +47,6 @@
         </div>
     </div>
 
-    <!-- Excluded Paths sub-panel -->
     <div id="subpanel-excluded" class="sub-panel">
         <p class="section-desc">Events under these path prefixes are skipped globally.</p>
         <div class="paths-bar">
@@ -75,15 +73,17 @@
     </div>
 </section>
 
-<!-- Section 2: Settings (toggles and actions) -->
+<!-- ── Tab 2: Options ─────────────────────────────────────── -->
 <section id="tab-options" class="settings-panel card">
+
+    <!-- Monitoring status -->
     <div class="setting-block">
         <div class="setting-control">
             <span class="setting-label">Monitoring Status</span>
             <span class="status-badge {{ 'active' if config.monitoring_active and config.notifier_running else 'paused' }}">
                 {% if config.monitoring_active and config.notifier_running %}ACTIVE{% else %}PAUSED{% endif %}
             </span>
-            <form method="post" action="{{ url_for('routes.settings') }}" style="display: inline;">
+            <form method="post" action="{{ url_for('routes.settings') }}" style="display:inline;">
                 <input type="hidden" name="action" value="monitoring_status">
                 <input type="hidden" name="status" value="{{ 'paused' if config.monitoring_active else 'active' }}">
                 <button type="submit" class="btn btn-secondary">{{ 'Pause' if config.monitoring_active else 'Resume' }}</button>
@@ -92,66 +92,83 @@
         <p class="setting-desc">ACTIVE = pyinotify running. PAUSED = notifier stopped; baseline unchanged.</p>
     </div>
 
+    <!-- Recursive -->
     <div class="setting-block">
         <div class="setting-control">
             <span class="setting-label">Recursive Monitoring</span>
-            <form method="post" action="{{ url_for('routes.settings') }}" style="display: inline;">
+            <form method="post" action="{{ url_for('routes.settings') }}" style="display:inline;">
                 <input type="hidden" name="action" value="recursive">
                 <input type="hidden" name="recursive" value="{{ 'off' if config.recursive else 'on' }}">
-                <button type="submit" class="btn btn-toggle">{{ 'ON' if config.recursive else 'OFF' }}</button>
+                <button type="submit" class="btn btn-toggle {{ 'btn-toggle-on' if config.recursive else '' }}">{{ 'ON' if config.recursive else 'OFF' }}</button>
             </form>
         </div>
         <p class="setting-desc">ON = watch subdirectories. OFF = direct children only. Default ON.</p>
     </div>
 
+    <!-- Ignore hidden -->
     <div class="setting-block">
         <div class="setting-control">
             <span class="setting-label">Ignore Hidden Files (.*)</span>
-            <form method="post" action="{{ url_for('routes.settings') }}" style="display: inline;">
+            <form method="post" action="{{ url_for('routes.settings') }}" style="display:inline;">
                 <input type="hidden" name="action" value="ignore_hidden">
                 <input type="hidden" name="ignore_hidden" value="{{ 'off' if config.ignore_hidden else 'on' }}">
-                <button type="submit" class="btn btn-toggle">{{ 'ON' if config.ignore_hidden else 'OFF' }}</button>
+                <button type="submit" class="btn btn-toggle {{ 'btn-toggle-on' if config.ignore_hidden else '' }}">{{ 'ON' if config.ignore_hidden else 'OFF' }}</button>
             </form>
         </div>
         <p class="setting-desc">Skip files and directories whose name starts with a dot.</p>
     </div>
 
+    <!-- Auto-update baseline -->
     <div class="setting-block">
         <div class="setting-control">
             <span class="setting-label">Auto-Update Baseline</span>
-            <form method="post" action="{{ url_for('routes.settings') }}" style="display: inline;">
+            <form method="post" action="{{ url_for('routes.settings') }}" style="display:inline;">
                 <input type="hidden" name="action" value="auto_baseline">
                 <input type="hidden" name="auto_baseline" value="{{ 'off' if config.auto_update_baseline else 'on' }}">
-                <button type="submit" class="btn btn-toggle">{{ 'ON' if config.auto_update_baseline else 'OFF' }}</button>
+                <button type="submit" class="btn btn-toggle {{ 'btn-toggle-on' if config.auto_update_baseline else '' }}">{{ 'ON' if config.auto_update_baseline else 'OFF' }}</button>
             </form>
         </div>
-        <p class="setting-desc">OFF = baseline unchanged, changes logged only (recommended). ON = baseline updated after every change.</p>
+        <p class="setting-desc">OFF = baseline preserved; all changes logged only (recommended). ON = baseline updated after every change.</p>
     </div>
 
+    <!-- Rescan baseline -->
     <div class="setting-block">
         <div class="setting-control">
-            <span class="setting-label">Baseline Management</span>
-            <form method="post" action="{{ url_for('routes.settings') }}" style="display: inline;" onsubmit="return confirm('Clear all baselines and alerts, then rescan all monitored paths?');">
+            <span class="setting-label">Rescan Baseline</span>
+            <form method="post" action="{{ url_for('routes.settings') }}" style="display:inline;"
+                  onsubmit="return confirm('Clear all baselines and alerts, then rescan all monitored paths?');">
                 <input type="hidden" name="action" value="clear_baseline_rescan">
-                <button type="submit" class="btn btn-primary">Clear baselines and rescan all monitored paths</button>
+                <button type="submit" class="btn btn-primary">Clear &amp; Rescan All Paths</button>
             </form>
         </div>
-        <p class="setting-desc">Clears existing baseline and all alerts, then rescans all monitored paths.</p>
+        <p class="setting-desc">Clears existing baselines and all alert logs, then rescans all monitored paths to rebuild from scratch.</p>
     </div>
 
+    <!-- ── Restart service (danger zone) ── -->
     <div class="setting-block restart-block">
         <div class="setting-control">
-            <span class="setting-label">Restart Monitoring Service</span>
-            <form method="post" action="{{ url_for('routes.settings') }}" style="display: inline;" onsubmit="return confirm('Clear everything except account? This removes logs, audit logs, alerts, baselines, and monitored paths. You must re-add paths after restart.');">
-                <input type="hidden" name="action" value="restart">
-                <button type="submit" class="btn btn-danger">Restart Service (Clear All Except Account)</button>
-            </form>
+            <div>
+                <span class="setting-label">Restart Monitoring Service</span>
+                <div class="wipe-list">
+                    Clears ALL of the following — only your account credentials are kept:
+                    <ul>
+                        <li>📜 All logs &amp; alerts</li>
+                        <li>📁 File change history</li>
+                        <li>📊 Baselines</li>
+                        <li>⚙️ All settings &amp; monitored paths</li>
+                        <li>🔍 Settings audit log</li>
+                    </ul>
+                    You will need to re-add monitored paths and turn monitoring back on after restarting.
+                </div>
+            </div>
+            <button type="button" class="btn btn-danger" onclick="openRestartModal()">
+                Restart &amp; Wipe All Data
+            </button>
         </div>
-        <p class="setting-desc restart-warning">⚠️ Clears entire database except account info: logs, settings audit, alerts, baselines, and monitored paths. Monitoring stops. Re-add paths and turn monitoring back on after.</p>
     </div>
 </section>
 
-<!-- Section 3: Audit Logs -->
+<!-- ── Tab 3: Audit log ───────────────────────────────────── -->
 <section id="tab-audit" class="settings-panel card">
     <h2 class="card-heading">SETTINGS AUDIT LOG</h2>
     <table class="audit-table">
@@ -160,39 +177,62 @@
         </thead>
         <tbody>
             {% for e in audit %}
-            <tr>
-                <td>{{ e.timestamp }}</td>
-                <td>{{ e.message }}</td>
-            </tr>
+            <tr><td>{{ e.timestamp }}</td><td>{{ e.message }}</td></tr>
             {% else %}
-            <tr><td colspan="2" class="text-muted">No entries yet.</td></tr>
+            <tr><td colspan="2" style="color:var(--text-muted);padding:20px;">No entries yet.</td></tr>
             {% endfor %}
         </tbody>
     </table>
 </section>
 
+<!-- ── Restart confirmation modal ───────────────────────── -->
+<div id="restartModal" class="modal-overlay" onclick="closeRestartModal(event)">
+    <div class="modal-box">
+        <div class="modal-icon">⚠️</div>
+        <h2 class="modal-title">Wipe All Data?</h2>
+        <p class="modal-body">
+            This will permanently delete <strong>all logs, alerts, file history, baselines,
+            and settings</strong>. Monitoring will stop.<br><br>
+            Your account credentials will not be affected.
+        </p>
+        <p class="modal-body" style="color:var(--danger);font-weight:600;">
+            This action cannot be undone.
+        </p>
+        <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" onclick="closeRestartModal()">Cancel</button>
+            <form method="post" action="{{ url_for('routes.settings') }}" style="display:inline;">
+                <input type="hidden" name="action" value="restart">
+                <button type="submit" class="btn btn-danger">Yes, wipe everything</button>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
-(function() {
-    var tabs = document.querySelectorAll('.tab-btn');
+(function () {
+    /* ── Tab switching ── */
+    var tabs   = document.querySelectorAll('.tab-btn');
     var panels = document.querySelectorAll('.settings-panel');
-    tabs.forEach(function(btn) {
-        btn.addEventListener('click', function() {
+    tabs.forEach(function (btn) {
+        btn.addEventListener('click', function () {
             var tab = this.getAttribute('data-tab');
-            tabs.forEach(function(b) { b.classList.remove('active'); });
-            panels.forEach(function(p) {
+            tabs.forEach(function (b) { b.classList.remove('active'); });
+            panels.forEach(function (p) {
                 p.classList.remove('active');
                 if (p.id === 'tab-' + tab) p.classList.add('active');
             });
             this.classList.add('active');
         });
     });
-    var subTabs = document.querySelectorAll('.sub-tab-btn');
+
+    /* ── Sub-tab switching ── */
+    var subTabs   = document.querySelectorAll('.sub-tab-btn');
     var subPanels = document.querySelectorAll('.sub-panel');
-    subTabs.forEach(function(btn) {
-        btn.addEventListener('click', function() {
+    subTabs.forEach(function (btn) {
+        btn.addEventListener('click', function () {
             var sub = this.getAttribute('data-subtab');
-            subTabs.forEach(function(b) { b.classList.remove('active'); });
-            subPanels.forEach(function(p) {
+            subTabs.forEach(function (b) { b.classList.remove('active'); });
+            subPanels.forEach(function (p) {
                 p.classList.remove('active');
                 if (p.id === 'subpanel-' + sub) p.classList.add('active');
             });
@@ -200,60 +240,115 @@
         });
     });
 })();
+
+function openRestartModal() {
+    document.getElementById('restartModal').classList.add('open');
+}
+function closeRestartModal(e) {
+    if (!e || e.target === document.getElementById('restartModal')) {
+        document.getElementById('restartModal').classList.remove('open');
+    }
+}
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeRestartModal();
+});
 </script>
 
 <style>
 .settings-intro { color: var(--text-muted); font-size: 0.9375rem; margin: 0 0 24px; line-height: 1.5; }
-.settings-tabs { display: flex; gap: 0; margin-bottom: 0; border-bottom: 1px solid var(--border); }
+
+/* Tabs */
+.settings-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 0; }
 .tab-btn { padding: 12px 24px; background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--text-muted); font-weight: 600; font-size: 0.875rem; cursor: pointer; margin-bottom: -1px; }
 .tab-btn:hover { color: var(--text); }
 .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
 .settings-panel.card { padding: 24px; margin-bottom: 24px; display: none; border-top: none; border-radius: 0 0 var(--radius) var(--radius); }
 .settings-panel.card.active { display: block; }
+
+/* Sub-tabs */
 .sub-tabs { display: flex; gap: 0; margin-bottom: 20px; border-bottom: 1px solid var(--border); }
 .sub-tab-btn { padding: 10px 20px; background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--text-muted); font-weight: 600; font-size: 0.8125rem; cursor: pointer; margin-bottom: -1px; }
 .sub-tab-btn:hover { color: var(--text); }
 .sub-tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
 .sub-panel { display: none; }
 .sub-panel.active { display: block; }
-.card-heading { font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin: 0 0 12px; }
-.section-desc { color: var(--text-muted); font-size: 0.8125rem; margin: 0 0 16px; }
+
+/* Paths */
+.card-heading { font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--text-muted); margin: 0 0 12px; }
+.section-desc { color: var(--text-muted); font-size: 0.8125rem; margin: 0 0 16px; line-height: 1.5; }
 .paths-bar { width: 100%; }
 .add-path-top { margin-bottom: 20px; }
 .add-path-row { display: flex; flex-wrap: nowrap; gap: 12px; align-items: center; width: 100%; }
 .path-input { padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-row); color: var(--text); }
-.path-input-full { flex: 1; min-width: 0; width: 100%; }
-.path-input-wide { min-width: 320px; flex: 1; max-width: 100%; }
-.path-list-blocks { width: 100%; padding: 0; margin: 0; }
+.path-input-full { flex: 1; min-width: 0; }
+.path-list-blocks { width: 100%; }
 .path-row { display: flex; align-items: center; width: 100%; padding: 12px 16px; background: var(--bg-row-alt); border: 1px solid var(--border); border-top: none; font-size: 0.875rem; }
 .path-row:first-of-type { border-top: 1px solid var(--border); }
-.path-row-path { flex: 1; min-width: 0; font-family: 'IBM Plex Mono', monospace; font-size: 0.8125rem; word-break: break-all; margin: 0; padding-right: 16px; }
-.path-row-status { font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; padding: 4px 10px; border-radius: 6px; margin-right: 12px; white-space: nowrap; }
-.path-row.active .path-row-status { background: rgba(63, 185, 80, 0.2); color: #3fb950; }
+.path-row-path { flex: 1; font-family: 'IBM Plex Mono', monospace; font-size: 0.8125rem; word-break: break-all; margin: 0; padding-right: 16px; }
+.path-row-status { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; padding: 4px 10px; border-radius: 6px; margin-right: 12px; white-space: nowrap; }
+.path-row.active .path-row-status { background: rgba(63,185,80,.2); color: #3fb950; }
 .path-row.scanning .path-row-status { background: var(--accent-soft); color: var(--accent); }
-.path-row.failed .path-row-status { background: rgba(248, 81, 73, 0.2); color: var(--danger); }
+.path-row.failed .path-row-status { background: rgba(248,81,73,.2); color: var(--danger); }
 .path-row.failed { border-left: 3px solid var(--danger); }
 .path-row-form { flex-shrink: 0; }
 .btn-row-remove { padding: 6px 12px; font-size: 0.8125rem; background: transparent; border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-muted); cursor: pointer; }
 .btn-row-remove:hover { color: var(--danger); border-color: var(--danger); }
-.no-paths-msg { color: var(--text-muted); font-size: 0.875rem; padding: 12px 16px; border: 1px solid var(--border); width: 100%; }
-.btn { padding: 8px 16px; border-radius: var(--radius-sm); border: 1px solid var(--border); cursor: pointer; font-weight: 500; font-size: 0.875rem; }
+.no-paths-msg { color: var(--text-muted); font-size: 0.875rem; padding: 12px 16px; border: 1px solid var(--border); }
+
+/* Setting blocks */
+.setting-block { margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+.setting-block:last-child { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
+.setting-control { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 12px; }
+.setting-label { font-weight: 600; color: var(--text); min-width: 180px; padding-top: 2px; }
+.setting-desc { color: var(--text-muted); font-size: 0.8125rem; margin: 10px 0 0; line-height: 1.5; }
+
+/* Wipe list */
+.restart-block { border-top: 1px solid var(--border); padding-top: 24px; margin-top: 8px; }
+.wipe-list { color: var(--text-muted); font-size: 0.8125rem; margin-top: 6px; line-height: 1.6; }
+.wipe-list ul { margin: 6px 0 8px 0; padding-left: 20px; }
+.wipe-list li { margin-bottom: 2px; }
+
+/* Buttons */
+.btn { padding: 8px 16px; border-radius: var(--radius-sm); border: 1px solid var(--border); cursor: pointer; font-weight: 500; font-size: 0.875rem; transition: opacity .15s; }
+.btn:hover { opacity: 0.88; }
 .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
 .btn-secondary { background: var(--bg-row); color: var(--text); }
 .btn-danger { background: var(--danger); color: #fff; border-color: var(--danger); }
-.btn-toggle { background: var(--bg-row); color: var(--text); min-width: 48px; }
-.setting-block { margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
-.setting-block:last-child { border-bottom: none; padding-bottom: 0; }
-.restart-block { border-top: 1px solid var(--border); padding-top: 24px; margin-top: 8px; }
-.setting-control { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-.setting-label { font-weight: 600; color: var(--text); min-width: 160px; }
-.setting-desc { color: var(--text-muted); font-size: 0.8125rem; margin: 10px 0 0; line-height: 1.4; }
-.restart-warning { color: var(--warn); }
-.status-badge { padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; }
-.status-badge.active { background: rgba(63, 185, 80, 0.2); color: #3fb950; }
+.btn-toggle { background: var(--bg-row); color: var(--text-muted); min-width: 52px; }
+.btn-toggle-on { background: rgba(63,185,80,.15); color: #3fb950; border-color: rgba(63,185,80,.3); }
+.status-badge { padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; }
+.status-badge.active { background: rgba(63,185,80,.2); color: #3fb950; }
 .status-badge.paused { background: var(--warn-bg); color: var(--warn); }
+
+/* Audit table */
 .audit-table { font-size: 0.8125rem; width: 100%; border-collapse: collapse; }
 .audit-table th, .audit-table td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border); }
 .audit-table th { background: var(--bg-row); color: var(--text-muted); font-weight: 600; }
+
+/* Modal */
+.modal-overlay {
+    display: none;
+    position: fixed; inset: 0; z-index: 1000;
+    background: rgba(0,0,0,0.65);
+    backdrop-filter: blur(3px);
+    align-items: center; justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal-box {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px 36px;
+    max-width: 420px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+}
+.modal-icon { font-size: 2.5rem; margin-bottom: 12px; }
+.modal-title { font-size: 1.25rem; font-weight: 700; margin: 0 0 12px; color: var(--text); }
+.modal-body { font-size: 0.9rem; color: var(--text-muted); line-height: 1.6; margin: 0 0 16px; }
+.modal-actions { display: flex; justify-content: center; gap: 12px; margin-top: 24px; }
+.modal-actions .btn { padding: 10px 24px; font-size: 0.9375rem; }
 </style>
 {% endblock %}
