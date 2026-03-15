@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+{% block title %}Statistics – FIM{% endblock %}
+{% block content %}
+<h1>📈 Statistics</h1>
+<p style="color:var(--text-muted);margin:-8px 0 24px;font-size:0.9375rem;">
+    Aggregated view of file integrity events across all monitored paths.
+</p>
+
+<!-- Summary cards -->
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;">
+    <div class="metric-card" style="border-left:4px solid #58a6ff;">
+        <div class="count">{{ files_tracked }}</div>
+        <div class="label">Files Tracked</div>
+    </div>
+    <div class="metric-card" style="border-left:4px solid #d29922;">
+        <div class="count">{{ drift_count }}</div>
+        <div class="label">Files With Changes</div>
+    </div>
+    <div class="metric-card" style="border-left:4px solid {% if drift_pct > 50 %}#f85149{% elif drift_pct > 20 %}#d29922{% else %}#3fb950{% endif %};">
+        <div class="count">{{ drift_pct }}%</div>
+        <div class="label">Baseline Drift</div>
+    </div>
+    <div class="metric-card" style="border-left:4px solid {% if suid_count > 0 %}#f85149{% else %}#3fb950{% endif %};">
+        <div class="count">{{ suid_count }}</div>
+        <div class="label">SUID Changes</div>
+    </div>
+</div>
+
+<!-- Hourly heatmap -->
+<div class="card" style="padding:20px 24px;">
+    <div class="chart-title">Event Frequency by Hour of Day (last 24h)</div>
+    <div class="chart-container" style="height:200px;">
+        <canvas id="hourlyChart"></canvas>
+    </div>
+</div>
+
+<!-- Two-column charts -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+    <div class="card" style="padding:20px 24px;">
+        <div class="chart-title">Event Type Breakdown</div>
+        <div class="chart-container" style="height:260px;">
+            <canvas id="etChart"></canvas>
+        </div>
+    </div>
+    <div class="card" style="padding:20px 24px;">
+        <div class="chart-title">Files by Directory</div>
+        <div class="chart-container" style="height:260px;">
+            <canvas id="dirChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Most changed files -->
+<div class="card" style="padding:20px 24px 0;">
+    <div class="chart-title" style="margin-bottom:16px;">Most Changed Files (top 10)</div>
+    {% if most_changed %}
+    <div style="height:260px;margin-bottom:16px;">
+        <canvas id="mcChart"></canvas>
+    </div>
+    <table style="margin-top:4px;">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>File Path</th>
+                <th style="width:80px;text-align:right;">Events</th>
+                <th style="width:180px;">Activity Bar</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% set max_count = most_changed[0].count if most_changed else 1 %}
+        {% for f in most_changed %}
+        <tr>
+            <td style="color:var(--text-muted);width:32px;">{{ loop.index }}</td>
+            <td>
+                <a href="{{ url_for('routes.file_analysis', path=f.path) }}"
+                   style="color:var(--accent);text-decoration:none;font-family:'IBM Plex Mono',monospace;font-size:0.8rem;word-break:break-all;">
+                    {{ f.path }}
+                </a>
+            </td>
+            <td style="text-align:right;font-weight:700;color:{% if f.count > 20 %}#f85149{% elif f.count > 5 %}#d29922{% else %}#58a6ff{% endif %};">
+                {{ f.count }}
+            </td>
+            <td>
+                <div style="background:var(--bg-row);border-radius:4px;height:8px;overflow:hidden;">
+                    <div style="background:{% if f.count > 20 %}#f85149{% elif f.count > 5 %}#d29922{% else %}#58a6ff{% endif %};
+                                height:100%;width:{{ (f.count / max_count * 100)|round }}%;border-radius:4px;"></div>
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color:var(--text-muted);padding:16px 0;">No change events recorded yet.</p>
+    {% endif %}
+    <div style="height:16px;"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+(function() {
+    var COLORS = ['#58a6ff','#f85149','#d29922','#3fb950','#db6d28','#a371f7','#8b949e','#39d353','#e3b341','#ff7b72'];
+    var gridColor = 'rgba(48,54,61,0.5)';
+    var textColor = '#e6edf3';
+    var mutedColor = '#8b949e';
+
+    // Hourly
+    new Chart(document.getElementById('hourlyChart'), {
+        type: 'bar',
+        data: {
+            labels: {{ hourly_labels | tojson }},
+            datasets: [{
+                label: 'Events',
+                data: {{ hourly_values | tojson }},
+                backgroundColor: 'rgba(88,166,255,0.6)',
+                borderColor: '#58a6ff',
+                borderWidth: 1,
+                borderRadius: 4,
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { grid: { color: gridColor }, ticks: { color: mutedColor, maxRotation: 0, font: { size: 10 } } },
+                y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: mutedColor } }
+            }
+        }
+    });
+
+    // Event types
+    var etLabels = {{ et_labels | tojson }};
+    var etValues = {{ et_values | tojson }};
+    if (etLabels.length > 0) {
+        new Chart(document.getElementById('etChart'), {
+            type: 'doughnut',
+            data: {
+                labels: etLabels,
+                datasets: [{ data: etValues, backgroundColor: COLORS, borderWidth: 2, borderColor: '#161b22' }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position: 'right', labels: { color: textColor, padding: 12, font: { size: 12 } } } }
+            }
+        });
+    }
+
+    // Directory breakdown
+    var tdLabels = {{ td_labels | tojson }};
+    var tdValues = {{ td_values | tojson }};
+    if (tdLabels.length > 0) {
+        new Chart(document.getElementById('dirChart'), {
+            type: 'bar',
+            data: {
+                labels: tdLabels,
+                datasets: [{
+                    label: 'Files',
+                    data: tdValues,
+                    backgroundColor: 'rgba(63,185,80,0.5)',
+                    borderColor: '#3fb950',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: mutedColor } },
+                    y: { grid: { display: false }, ticks: { color: mutedColor, font: { size: 11 } } }
+                }
+            }
+        });
+    }
+
+    // Most changed files chart
+    var mcLabels = {{ mc_labels | tojson }};
+    var mcValues = {{ mc_values | tojson }};
+    if (mcLabels.length > 0) {
+        new Chart(document.getElementById('mcChart'), {
+            type: 'bar',
+            data: {
+                labels: mcLabels,
+                datasets: [{
+                    label: 'Change Events',
+                    data: mcValues,
+                    backgroundColor: mcValues.map(function(v) {
+                        return v > 20 ? 'rgba(248,81,73,0.65)' : v > 5 ? 'rgba(210,153,34,0.65)' : 'rgba(88,166,255,0.65)';
+                    }),
+                    borderColor: mcValues.map(function(v) {
+                        return v > 20 ? '#f85149' : v > 5 ? '#d29922' : '#58a6ff';
+                    }),
+                    borderWidth: 1,
+                    borderRadius: 4,
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { color: gridColor }, ticks: { color: mutedColor, maxRotation: 30, font: { size: 11 } } },
+                    y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: mutedColor } }
+                }
+            }
+        });
+    }
+})();
+</script>
+{% endblock %}
