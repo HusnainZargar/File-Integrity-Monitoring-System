@@ -1,186 +1,185 @@
 # File Integrity Monitoring (FIM) System for Linux
-
-![Python](https://img.shields.io/badge/Python-3.x-blue)
-![Platform](https://img.shields.io/badge/Platform-Linux-orange)
-![Framework](https://img.shields.io/badge/Web-Flask-lightgrey)
-![Status](https://img.shields.io/badge/Status-Under%20Development-yellow)
-
-> **Status:** 🚧 Under Development  
-> **Release:** v0.4.0-alpha
-
----
-
-## Overview
-
-A lightweight **File Integrity Monitoring (FIM)** tool for Linux that detects **real-time file content and metadata changes** using kernel-level notifications.  
-Built for **learning, research, and security tooling demonstrations**, with a modern web dashboard for visibility.
-
-The goal is to provide a **simple, event-driven FIM tool** suitable for:
-- Cybersecurity learning
-- Academic projects
-- Home lab security monitoring
-
----
-
-## Objectives
-
-- Detect file integrity violations in real time
-- Avoid resource-heavy polling mechanisms
-- Maintain a baseline of file attributes including SHA-256 hashes, ownership, permissions, and more
-- Log and visualize integrity alerts through a web interface
-- Run silently as a background service on Linux
-
----
-
-## ✨ Key Features
-
-### Directory Monitoring
-- User-defined directories monitored recursively
-- Supports dynamic addition of new directories
-
-### Event-Based Detection
-- Uses Linux kernel notifications via **pyinotify**
-- Detects:
-  - File creation
-  - File modification
-  - File deletion
-  - Metadata changes (`IN_ATTRIB`)
-  - Move / rename events
-
-### Baseline Management
-- SQLite-based persistent baseline
-- Stores comprehensive file attributes:
-  - SHA-256 hash
-  - Owner
-  - Group
-  - Permissions (mode)
-  - SUID/SGID
-  - File size
-  - Modification time (mtime)
-
-### Alert Logging
-- Timestamped alerts stored in SQLite
-- Detailed JSON payloads containing:
-  - Old vs new attributes
-  - Change context (what changed and how)
-
-### Web Dashboard (Flask)
-- Modern dark-themed UI
-- Separate views for **Logs** and **Alerts**
-- Expandable alert rows with:
-  - Side-by-side attribute comparison
-  - Highlighted changed fields
-- Severity indicators:
-  - Critical
-  - High
-  - Medium
-  - Low
  
-### Enhanced Change Detection
-- Detects both content and metadata changes
-- Tracks ownership, permissions, group, SUID, size, and timestamps
-
-### Move / Rename Handling
-- Supports move/rename detection using:
-  - `IN_MOVED_FROM`
-  - `IN_MOVED_TO`
-- Correlates move events into a single logical alert
-
-### Background Execution
-- Runs as a **systemd service**
-- Persistent monitoring across reboots
-
+[![Python](https://img.shields.io/badge/Python-3.x-blue)](https://python.org)
+[![Platform](https://img.shields.io/badge/Platform-Linux-orange)](https://linux.org)
+[![Framework](https://img.shields.io/badge/Web-Flask-lightgrey)](https://flask.palletsprojects.com)
+[![Status](https://img.shields.io/badge/Status-Under%20Development-yellow)]()
+[![Release](https://img.shields.io/badge/Release-v0.5.0--alpha-blueviolet)]()
+ 
+> **Status:** 🚧 Under Development &nbsp;|&nbsp; **Release:** v0.5.0-alpha
+ 
 ---
-
-## 🛠️ Technology Stack
-
-| Component       | Technology |
-|-----------------|-----------|
-| Language        | Python |
-| Monitoring      | pyinotify |
-| Hashing         | SHA-256 |
-| Web UI          | Flask + Jinja templating |
-| Styling         | Custom CSS (dark theme) |
-| Storage         | SQLite |
-| Operating System| Linux (tested on Kali Linux) |
-
+ 
+## Overview
+ 
+A lightweight **File Integrity Monitoring (FIM)** tool for Linux that detects real-time file content and metadata changes using kernel-level notifications.
+Built for **learning, research, and security tooling demonstrations**, with a modern dark-themed web dashboard.
+ 
+Runs as a **systemd service** — persistent across reboots, manageable via `systemctl`.
+ 
 ---
-
-## Methodology
-
-### Configuration
-- Directories specified via CLI arguments
-- systemd service for background execution
-
-### Initial Baseline Scan
-- Recursively walks the target directory
-- Captures full file attributes into baseline
-
-### Real-Time Monitoring
-- Kernel filesystem events trigger integrity checks
-- Supports modify, create, delete, attrib, and move events
-
-### Alert Processing
-- Compares current attributes with baseline
-- Categorizes alerts:
-  - File Modified
-  - Permission Change
-  - Ownership Change
-  - SUID Change
-  - File Deleted
-  - New File Detected
-
-### Web Interface
-- Flask routes:
-  - `/logs` — operational and event logs
-  - `/alerts` — integrity alerts
-- Responsive dashboard with expandable alert details
-
-### Deployment
-- Automated systemd service creation and management
+ 
+## Key Features
+ 
+- **Real-time detection** via `pyinotify` (kernel `inotify` — no polling)
+- **Detects:** file creation, modification, deletion, permission changes, ownership changes, SUID changes, moves/renames
+- **SHA-256 hashing** — content integrity verified on every change
+- **Immutable baseline** — original snapshot preserved; every change appended to history, never overwritten
+- **Per-file change history** — full attribute snapshot logged at every event
+- **Severity classification** — Critical / High / Medium / Low
+- **Web dashboard** — dark-themed Flask UI with:
+  - Dashboard with live alert counts and Chart.js time-series + distribution charts
+  - Alerts and Logs views with search and pagination
+  - **File Analysis** — searchable paginated file browser with baseline diff and history timeline
+  - **Statistics** — most-changed files, hourly heatmap, event type breakdown, directory breakdown, baseline drift %
+  - Settings — add/remove monitored paths, exclusions, toggles, baseline rescan
+  - Account — change username/password, session management
+- **Systemd integration** — auto-start on boot, `journalctl` logging
+- **Debounced events** — prevents alert storms on rapidly-written files
+- **SQLite storage** — zero external dependencies for persistence
+ 
 ---
-
-## Current Scope (MVP)
-
-✔ Linux-only support  
-✔ Single-host monitoring  
-✔ Local DB baseline  
-✔ Basic alert dashboard  
-
-❌ No notification system  
+ 
+## Tech Stack
+ 
+| Component | Technology |
+|---|---|
+| Language | Python 3 |
+| File monitoring | pyinotify |
+| Hashing | SHA-256 |
+| Web UI | Flask + Jinja2 |
+| Storage | SQLite |
+| Styling | Custom CSS (dark theme) |
+| Charts | Chart.js |
+| OS | Linux (tested on Kali Linux) |
+ 
+---
+ 
+## Installation
+ 
+```bash
+# Clone the repo
+git clone https://github.com/HusnainZargar/File-Integrity-Monitoring-System.git
+cd File-Integrity-Monitoring-System
+ 
+# Install dependencies
+pip install flask pyinotify werkzeug
+```
+ 
+---
+ 
+## Running
+ 
+### First run — installs and starts the systemd service
+ 
+```bash
+# Without a path (add paths later from the web UI Settings page)
+sudo python3 main.py
+ 
+# With an initial path to monitor
+sudo python3 main.py /etc/ssh
+```
+ 
+> ⚠️ Must be run with `sudo` — required to install the systemd unit file.
+ 
+On first run the script will:
+1. Write `/etc/systemd/system/fim.service`
+2. Run `systemctl daemon-reload && systemctl enable fim && systemctl start fim`
+3. Print dashboard URL and default credentials, then exit
+ 
+The service takes over from there.
+ 
+### Accessing the dashboard
+ 
+```
+http://localhost:5000
+```
+ 
+Default credentials: `admin` / `admin` — **change these immediately from the Account page.**
+ 
+### Managing the service
+ 
+```bash
+systemctl status fim        # check status
+systemctl stop fim          # stop
+systemctl restart fim       # restart
+journalctl -u fim -f        # live logs
+```
+ 
+---
+ 
+## Project Structure
+ 
+```
+.
+├── main.py                  # Entry point — systemd setup + service runner
+├── components/
+│   ├── monitor.py           # pyinotify event handler, baseline management
+│   └── utils.py             # SQLite helpers, DB schema, file history
+├── web/
+│   ├── app.py               # Flask app factory
+│   ├── auth.py              # Authentication (PBKDF2 hashing)
+│   ├── routes.py            # All Flask routes
+│   └── templates/
+│       ├── base.html
+│       ├── dashboard.html
+│       ├── alerts.html
+│       ├── logs.html
+│       ├── file_analysis.html
+│       ├── statistics.html
+│       ├── settings.html
+│       ├── account.html
+│       └── login.html
+└── Project-Proposal.pdf
+```
+ 
+---
+ 
+## Current Scope (v0.5.0-alpha)
+ 
+✔ Linux-only, single-host monitoring  
+✔ Systemd service with auto-start  
+✔ Immutable baseline — original never overwritten  
+✔ Per-file change history (append-only)  
+✔ File Analysis + Statistics pages  
+✔ Paginated logs, alerts, and file browser with search  
+✔ Secure password hashing (PBKDF2 via werkzeug)  
+✔ Event debouncing  
+✔ Logout and restart confirmation modals  
+ 
+❌ No email / push notifications  
 ❌ No encrypted baseline  
-❌ No distributed agents  
-
+❌ No distributed / multi-host agents  
+❌ No role-based access control  
+ 
 ---
-
+ 
 ## Planned Enhancements
-
-- Email alerts
+ 
+- Email alerts on critical events
 - Encrypted baseline storage
-- Database-backed logging
-- Role-based authentication
 - Cross-platform support
-
+- Role-based authentication
+ 
 ---
-
+ 
 ## Use Case
-
+ 
 - Host-based intrusion detection learning
 - Linux file system monitoring practice
 - Academic cybersecurity projects
-- Security tooling demonstrations
-
+- Security tooling demonstrations and home-lab setups
+ 
 ---
-
+ 
 ## Author
-
+ 
 **Muhammad Husnain**  
-🎓 BS Cybersecurity  
-🛡️ Junior Penetration Tester  
-✍️ Blog: https://hackwithhusnain.com
-
+🎓 BS Cybersecurity &nbsp;|&nbsp; 🛡️ Junior Penetration Tester  
+✍️ [hackwithhusnain.com](https://hackwithhusnain.com)
+ 
 ---
-
+ 
 ## License
-
-License will be added once the project reaches a stable release.
+ 
+MIT — see `LICENSE` for details.
