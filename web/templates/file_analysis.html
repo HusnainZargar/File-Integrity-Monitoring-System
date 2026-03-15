@@ -1,0 +1,395 @@
+{% extends "base.html" %}
+{% block title %}File Analysis – FIM{% endblock %}
+{% block head %}
+<style>
+/* ── Search bar ─────────────────────────────────────────── */
+.fa-search-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 14px;
+}
+.fa-search-input {
+    flex: 1;
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--bg-row);
+    color: var(--text);
+    font-size: 0.9rem;
+}
+.fa-search-input:focus { outline: none; border-color: var(--accent); }
+.fa-search-btn {
+    padding: 10px 20px;
+    border-radius: var(--radius-sm);
+    border: none; background: var(--accent);
+    color: #fff; font-size: 0.875rem;
+    font-weight: 600; cursor: pointer;
+    white-space: nowrap;
+}
+.fa-search-clear {
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: transparent; color: var(--text-muted);
+    font-size: 0.875rem; cursor: pointer;
+    text-decoration: none; white-space: nowrap;
+}
+.fa-search-clear:hover { color: var(--danger); border-color: var(--danger); }
+.fa-count {
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+}
+
+/* ── Path results list ──────────────────────────────────── */
+.fa-path-list {
+    background: var(--bg-row-alt);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 6px;
+}
+.fa-path-item {
+    display: flex;
+    align-items: center;
+    padding: 11px 16px;
+    border-bottom: 1px solid var(--border);
+    text-decoration: none;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+    word-break: break-all;
+    line-height: 1.4;
+    transition: background 0.12s, color 0.12s;
+    gap: 10px;
+}
+.fa-path-item:last-child { border-bottom: none; }
+.fa-path-item:hover { background: var(--bg-row); color: var(--text); }
+.fa-path-item.selected {
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-left: 3px solid var(--accent);
+}
+.fa-path-arrow {
+    margin-left: auto;
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    opacity: 0;
+    transition: opacity 0.12s;
+}
+.fa-path-item:hover .fa-path-arrow,
+.fa-path-item.selected .fa-path-arrow { opacity: 1; }
+.fa-path-empty {
+    padding: 24px 16px;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    text-align: center;
+}
+
+/* ── Pagination ─────────────────────────────────────────── */
+.fa-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 4px;
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+    margin-bottom: 28px;
+}
+.fa-page-links { display: flex; gap: 5px; align-items: center; }
+.fa-page-btn {
+    padding: 5px 11px; border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg-row); color: var(--text-muted);
+    text-decoration: none; font-size: 0.8rem; font-weight: 500;
+    transition: color .12s, border-color .12s;
+}
+.fa-page-btn:hover { color: var(--text); border-color: var(--accent); }
+.fa-page-btn.active { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+.fa-page-btn.disabled { opacity: 0.35; pointer-events: none; }
+
+/* ── Detail section (stacked) ───────────────────────────── */
+.fa-divider {
+    border: none; border-top: 1px solid var(--border);
+    margin: 4px 0 24px;
+}
+.fa-section-label {
+    font-size: 0.6875rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .09em; color: var(--text-muted); margin: 0 0 12px;
+}
+.fa-path-heading {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.875rem; color: var(--accent);
+    word-break: break-all; margin-bottom: 16px;
+    padding: 10px 14px;
+    background: var(--bg-row); border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.fa-attr-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+}
+.fa-attr-tile {
+    background: var(--bg-row-alt);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+}
+.fa-attr-tile .tile-label {
+    font-size: 0.6875rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: .07em; color: var(--text-muted); margin-bottom: 6px;
+}
+.fa-attr-tile .tile-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8125rem; color: var(--text);
+    word-break: break-all; line-height: 1.4;
+}
+.fa-attr-tile.hash-tile { grid-column: span 2; }
+
+/* Event badges */
+.ev-badge {
+    padding: 3px 9px; border-radius: 5px;
+    font-size: 0.7rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .04em;
+    white-space: nowrap;
+}
+</style>
+{% endblock %}
+{% block content %}
+<h1>📁 File Analysis</h1>
+<p style="color:var(--text-muted);margin:-8px 0 20px;font-size:0.9375rem;">
+    Search tracked files, then click one to inspect its original baseline and full change history.
+</p>
+
+<!-- ── Search bar ────────────────────────────────────────── -->
+<form method="get" action="{{ url_for('routes.file_analysis') }}" class="fa-search-row">
+    {% if selected_path %}<input type="hidden" name="path" value="{{ selected_path }}">{% endif %}
+    <input type="text" name="search" class="fa-search-input"
+           placeholder="Search by path or filename…" value="{{ search }}">
+    <button type="submit" class="fa-search-btn">Search</button>
+    {% if search %}
+    <a href="{{ url_for('routes.file_analysis', path=selected_path) }}" class="fa-search-clear">✕ Clear</a>
+    {% endif %}
+</form>
+
+<!-- ── Count ─────────────────────────────────────────────── -->
+<div class="fa-count">
+    {% if search %}
+        {{ total }} result{{ 's' if total != 1 else '' }} for "<strong style="color:var(--text);">{{ search }}</strong>"
+    {% else %}
+        {{ total }} tracked file{{ 's' if total != 1 else '' }}
+    {% endif %}
+</div>
+
+<!-- ── Path list ─────────────────────────────────────────── -->
+<div class="fa-path-list">
+    {% for p in page_paths %}
+    <a href="{{ url_for('routes.file_analysis', path=p, search=search, page=page) }}"
+       class="fa-path-item {{ 'selected' if p == selected_path else '' }}"
+       title="{{ p }}">
+        <span>{{ p }}</span>
+        <span class="fa-path-arrow">→</span>
+    </a>
+    {% else %}
+    <div class="fa-path-empty">No files match "{{ search }}".</div>
+    {% endfor %}
+</div>
+
+<!-- ── Pagination ────────────────────────────────────────── -->
+{% if total_pages > 1 %}
+<div class="fa-pagination">
+    <span>Page {{ page }} of {{ total_pages }}</span>
+    <div class="fa-page-links">
+        <a href="{{ url_for('routes.file_analysis', page=page-1, search=search, path=selected_path) }}"
+           class="fa-page-btn {{ 'disabled' if page <= 1 else '' }}">‹ Prev</a>
+        {% for p in range(1, total_pages + 1) %}
+            {% if p == page %}
+            <span class="fa-page-btn active">{{ p }}</span>
+            {% elif p == 1 or p == total_pages or (p >= page-2 and p <= page+2) %}
+            <a href="{{ url_for('routes.file_analysis', page=p, search=search, path=selected_path) }}"
+               class="fa-page-btn">{{ p }}</a>
+            {% elif p == page-3 or p == page+3 %}
+            <span style="color:var(--text-muted);padding:0 4px;">…</span>
+            {% endif %}
+        {% endfor %}
+        <a href="{{ url_for('routes.file_analysis', page=page+1, search=search, path=selected_path) }}"
+           class="fa-page-btn {{ 'disabled' if page >= total_pages else '' }}">Next ›</a>
+    </div>
+</div>
+{% else %}
+<div style="margin-bottom:28px;"></div>
+{% endif %}
+
+<!-- ── Detail (shown only when a path is selected) ───────── -->
+{% if selected_path %}
+
+<hr class="fa-divider">
+
+<!-- Selected path heading -->
+<div class="fa-section-label">SELECTED FILE</div>
+<div class="fa-path-heading">
+    <span>{{ selected_path }}</span>
+    {% if file_attrs %}
+    <span style="background:rgba(63,185,80,.15);color:#3fb950;padding:3px 10px;border-radius:5px;font-size:.72rem;font-weight:700;flex-shrink:0;">TRACKED</span>
+    {% else %}
+    <span style="background:rgba(248,81,73,.15);color:#f85149;padding:3px 10px;border-radius:5px;font-size:.72rem;font-weight:700;flex-shrink:0;">NOT IN BASELINE</span>
+    {% endif %}
+</div>
+
+<!-- Baseline attribute tiles -->
+{% if file_attrs %}
+<div class="fa-section-label">ORIGINAL BASELINE ATTRIBUTES</div>
+<div class="fa-attr-grid">
+    <div class="fa-attr-tile hash-tile">
+        <div class="tile-label">Hash (SHA-256)</div>
+        <div class="tile-value">
+            {% if file_attrs.hash %}{{ file_attrs.hash }}
+            {% else %}<em style="color:var(--text-muted);">directory — no hash</em>{% endif %}
+        </div>
+    </div>
+    <div class="fa-attr-tile">
+        <div class="tile-label">Owner</div>
+        <div class="tile-value">{{ file_attrs.owner }}</div>
+    </div>
+    <div class="fa-attr-tile">
+        <div class="tile-label">Group</div>
+        <div class="tile-value">{{ file_attrs.group }}</div>
+    </div>
+    <div class="fa-attr-tile">
+        <div class="tile-label">Mode</div>
+        <div class="tile-value">{{ file_attrs.mode }}</div>
+    </div>
+    <div class="fa-attr-tile">
+        <div class="tile-label">SUID</div>
+        <div class="tile-value">
+            {% if file_attrs.suid %}
+            <span style="background:rgba(248,81,73,.15);color:#f85149;padding:2px 8px;border-radius:4px;font-size:.72rem;font-weight:700;">SET ⚠</span>
+            {% else %}<span style="color:var(--text-muted);">Not set</span>{% endif %}
+        </div>
+    </div>
+    <div class="fa-attr-tile">
+        <div class="tile-label">Size</div>
+        <div class="tile-value">{{ file_attrs.size }} bytes</div>
+    </div>
+    <div class="fa-attr-tile">
+        <div class="tile-label">Mtime</div>
+        <div class="tile-value">{{ file_attrs.mtime|unixtime }}</div>
+    </div>
+</div>
+{% else %}
+<p style="color:var(--text-muted);margin-bottom:24px;">No baseline entry found — this file may have been removed from monitoring.</p>
+{% endif %}
+
+<!-- Change history table -->
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:12px;">
+    <div class="fa-section-label" style="margin:0;">CHANGE HISTORY</div>
+    <span style="font-size:0.8125rem;color:var(--text-muted);">{{ history|length }} event{{ 's' if history|length != 1 else '' }}</span>
+</div>
+
+{% if history %}
+<div class="card">
+    <table>
+        <thead>
+            <tr>
+                <th style="width:160px;">Timestamp</th>
+                <th style="width:140px;">Event</th>
+                <th>Hash</th>
+                <th style="width:90px;">Size</th>
+                <th style="width:90px;">Mode</th>
+                <th style="width:36px;"></th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for entry in history %}
+        {% set attrs = entry.attributes or {} %}
+        {% set ev = entry.event %}
+        <tr>
+            <td>{{ entry.timestamp }}</td>
+            <td>
+                {% if ev == 'baseline' %}
+                <span class="ev-badge" style="background:rgba(88,166,255,.12);color:#58a6ff;">Baseline</span>
+                {% elif ev == 'modified' %}
+                <span class="ev-badge" style="background:rgba(210,153,34,.2);color:#d29922;">Modified</span>
+                {% elif ev == 'created' %}
+                <span class="ev-badge" style="background:rgba(63,185,80,.15);color:#3fb950;">Created</span>
+                {% elif ev == 'deleted' %}
+                <span class="ev-badge" style="background:rgba(248,81,73,.15);color:#f85149;">Deleted</span>
+                {% elif ev == 'permission_change' %}
+                <span class="ev-badge" style="background:rgba(248,81,73,.15);color:#f85149;">Perm Change</span>
+                {% elif ev == 'ownership_change' %}
+                <span class="ev-badge" style="background:rgba(248,81,73,.15);color:#f85149;">Owner Change</span>
+                {% elif ev == 'suid_change' %}
+                <span class="ev-badge" style="background:rgba(248,81,73,.25);color:#f85149;">⚠ SUID</span>
+                {% elif ev == 'moved' %}
+                <span class="ev-badge" style="background:rgba(163,113,247,.15);color:#a371f7;">Moved</span>
+                {% elif ev == 'size_change' %}
+                <span class="ev-badge" style="background:rgba(210,153,34,.15);color:#d29922;">Size Change</span>
+                {% elif ev == 'timestamp_change' %}
+                <span class="ev-badge" style="background:rgba(139,148,158,.12);color:#8b949e;">Mtime</span>
+                {% else %}
+                <span class="ev-badge" style="color:var(--text-muted);">{{ ev }}</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if attrs.hash %}
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:0.75rem;color:var(--text-muted);" title="{{ attrs.hash }}">{{ attrs.hash[:16] }}…</span>
+                {% else %}<span style="color:var(--text-muted);">—</span>{% endif %}
+            </td>
+            <td style="color:var(--text-muted);font-size:0.8rem;">
+                {% if 'size' in attrs %}{{ attrs.size }}{% else %}—{% endif %}
+            </td>
+            <td>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:0.77rem;">
+                    {% if attrs.mode %}{{ attrs.mode }}{% else %}—{% endif %}
+                </span>
+            </td>
+            <td>
+                <span id="expand-h-{{ loop.index }}" class="expand" onclick="toggleDetails('h-{{ loop.index }}')">+</span>
+            </td>
+        </tr>
+        <tr id="details-h-{{ loop.index }}" class="details-row">
+            <td colspan="6">
+                <div class="details-inner">
+                    <h4>Full snapshot — {{ entry.timestamp }}</h4>
+                    <div class="attr-table-wrap">
+                        <table class="attr-table">
+                            <tr><th class="attr-name">Attribute</th><th>Value</th></tr>
+                            {% for key, val in attrs.items() %}
+                            <tr>
+                                <td class="attr-name">{{ key }}</td>
+                                <td class="attr-new">{% if key == 'mtime' %}{{ val|unixtime }}{% else %}{{ val }}{% endif %}</td>
+                            </tr>
+                            {% endfor %}
+                        </table>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="card" style="padding:32px;text-align:center;color:var(--text-muted);">
+    No change history recorded for this file yet.
+</div>
+{% endif %}
+
+{% else %}
+<!-- Empty state — no file selected yet -->
+<hr class="fa-divider">
+<div class="card" style="padding:52px 32px;text-align:center;">
+    <div style="font-size:2.5rem;margin-bottom:14px;">📁</div>
+    <div style="font-weight:600;font-size:1rem;margin-bottom:8px;">No file selected</div>
+    <div style="color:var(--text-muted);font-size:0.875rem;max-width:360px;margin:0 auto;line-height:1.6;">
+        Search above and click any file path to view its original baseline attributes and full change history.
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
