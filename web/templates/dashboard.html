@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Dashboard – FIM{% endblock %}
+{% block title %}Dashboard – IntegrityEye{% endblock %}
 {% block head %}
 <style>
     .dash-section-label {
@@ -18,6 +18,7 @@
         display: flex;
         flex-direction: column;
         gap: 6px;
+        transition: opacity 0.2s;
     }
     .metric-card .count {
         font-size: 2.25rem;
@@ -81,6 +82,27 @@
         box-shadow: 0 0 6px rgba(210,153,34,0.5);
     }
 
+    .live-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.6875rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        color: #3fb950;
+        margin-left: auto;
+    }
+    .live-dot {
+        width: 6px; height: 6px; border-radius: 50%;
+        background: #3fb950;
+        animation: pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.3; }
+    }
+
     .charts-grid {
         display: grid;
         grid-template-columns: 1fr 340px;
@@ -116,52 +138,56 @@
 </style>
 {% endblock %}
 {% block content %}
-<h1>Dashboard</h1>
 
-<!-- Metric cards -->
-<div class="metrics-row" style="margin-bottom:20px;">
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+    <h1 style="margin:0;">Dashboard</h1>
+    <span class="live-badge">
+        <span class="live-dot"></span>
+        Live
+    </span>
+</div>
+
+<div class="metrics-row" style="margin-bottom:20px;" id="metrics-row">
     <div class="metric-card critical">
-        <div class="count">{{ count_critical }}</div>
+        <div class="count" id="count-critical">{{ count_critical }}</div>
         <div class="label">Critical Alerts</div>
     </div>
     <div class="metric-card high">
-        <div class="count">{{ count_high }}</div>
+        <div class="count" id="count-high">{{ count_high }}</div>
         <div class="label">High Alerts</div>
     </div>
     <div class="metric-card medium">
-        <div class="count">{{ count_medium }}</div>
+        <div class="count" id="count-medium">{{ count_medium }}</div>
         <div class="label">Medium Alerts</div>
     </div>
     <div class="metric-card low">
-        <div class="count">{{ count_low }}</div>
+        <div class="count" id="count-low">{{ count_low }}</div>
         <div class="label">Low Alerts</div>
     </div>
 </div>
 
-<!-- Status strip -->
-<div class="status-strip">
+<div class="status-strip" id="status-strip">
     <div class="status-item">
         <div class="si-label">Monitoring</div>
-        <div class="si-value">
-            <span class="dot {{ 'dot-paused' if status_monitoring == 'PAUSED' else '' }}"></span>
-            {{ status_monitoring }}
+        <div class="si-value" id="si-monitoring">
+            <span class="dot {{ 'dot-paused' if status_monitoring == 'PAUSED' else '' }}" id="si-monitoring-dot"></span>
+            <span id="si-monitoring-text">{{ status_monitoring }}</span>
         </div>
     </div>
     <div class="status-item">
         <div class="si-label">Baseline</div>
-        <div class="si-value">{{ status_baseline }}</div>
+        <div class="si-value" id="si-baseline">{{ status_baseline }}</div>
     </div>
     <div class="status-item">
         <div class="si-label">Files Tracked</div>
-        <div class="si-value">{{ files_tracked }}</div>
+        <div class="si-value" id="si-files">{{ files_tracked }}</div>
     </div>
     <div class="status-item">
         <div class="si-label">Last Event</div>
-        <div class="si-value" style="font-size:0.8125rem;font-weight:500;color:var(--text-muted);">{{ last_event }}</div>
+        <div class="si-value" style="font-size:0.8125rem;font-weight:500;color:var(--text-muted);" id="si-last-event">{{ last_event }}</div>
     </div>
 </div>
 
-<!-- Charts -->
 <div class="charts-grid">
     <!-- Line chart -->
     <div class="chart-card">
@@ -174,7 +200,6 @@
         </div>
     </div>
 
-    <!-- Doughnut chart -->
     <div class="chart-card">
         <div class="chart-card-title">
             Alert Types
@@ -192,7 +217,6 @@
     var TICK   = '#8b949e';
     var TEXT   = '#e6edf3';
 
-    // ── Line chart ──────────────────────────────────────────────
     var timeLabels    = {{ time_labels    | tojson }};
     var seriesCrit    = {{ series_critical | tojson }};
     var seriesHigh    = {{ series_high    | tojson }};
@@ -301,12 +325,10 @@
         }
     });
 
-    // ── Doughnut chart ───────────────────────────────────────────
     var typeLabels = {{ type_labels | tojson }};
     var typeValues = {{ type_values | tojson }};
 
     if (typeLabels.length === 0) {
-        // Empty state: draw a placeholder ring
         typeLabels = ['No data'];
         typeValues = [1];
     }
@@ -355,6 +377,39 @@
             }
         }
     });
+
+    function setVal(id, val) {
+        var el = document.getElementById(id);
+        if (el && el.textContent !== String(val)) {
+            el.textContent = val;
+        }
+    }
+
+    function refreshStats() {
+        fetch('/api/dashboard_stats', { credentials: 'same-origin' })
+            .then(function(r) {
+                if (!r.ok) return;
+                return r.json();
+            })
+            .then(function(d) {
+                if (!d) return;
+                setVal('count-critical', d.count_critical);
+                setVal('count-high',     d.count_high);
+                setVal('count-medium',   d.count_medium);
+                setVal('count-low',      d.count_low);
+                setVal('si-monitoring-text', d.status_monitoring);
+                var dot = document.getElementById('si-monitoring-dot');
+                if (dot) {
+                    dot.className = 'dot' + (d.status_monitoring === 'PAUSED' ? ' dot-paused' : '');
+                }
+                setVal('si-baseline',   d.status_baseline);
+                setVal('si-files',      d.files_tracked);
+                setVal('si-last-event', d.last_event);
+            })
+            .catch(function() { });
+    }
+
+    setInterval(refreshStats, 3000);
 })();
 </script>
 {% endblock %}
