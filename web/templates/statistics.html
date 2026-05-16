@@ -1,12 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Statistics – FIM{% endblock %}
+{% block title %}Statistics – IntegrityEye{% endblock %}
 {% block content %}
 <h1>📈 Statistics</h1>
 <p style="color:var(--text-muted);margin:-8px 0 24px;font-size:0.9375rem;">
     Aggregated view of file integrity events across all monitored paths.
 </p>
 
-<!-- Summary cards -->
 <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;">
     <div class="metric-card" style="border-left:4px solid #58a6ff;">
         <div class="count">{{ files_tracked }}</div>
@@ -26,7 +25,6 @@
     </div>
 </div>
 
-<!-- Hourly heatmap -->
 <div class="card" style="padding:20px 24px;">
     <div class="chart-title">Event Frequency by Hour of Day (last 24h)</div>
     <div class="chart-container" style="height:200px;">
@@ -34,7 +32,6 @@
     </div>
 </div>
 
-<!-- Two-column charts -->
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
     <div class="card" style="padding:20px 24px;">
         <div class="chart-title">Event Type Breakdown</div>
@@ -49,8 +46,6 @@
         </div>
     </div>
 </div>
-
-<!-- Most changed files -->
 <div class="card" style="padding:20px 24px 0;">
     <div class="chart-title" style="margin-bottom:16px;">Most Changed Files (top 10)</div>
     {% if most_changed %}
@@ -104,7 +99,6 @@
     var textColor = '#e6edf3';
     var mutedColor = '#8b949e';
 
-    // Hourly
     new Chart(document.getElementById('hourlyChart'), {
         type: 'bar',
         data: {
@@ -128,7 +122,6 @@
         }
     });
 
-    // Event types
     var etLabels = {{ et_labels | tojson }};
     var etValues = {{ et_values | tojson }};
     if (etLabels.length > 0) {
@@ -144,8 +137,6 @@
             }
         });
     }
-
-    // Directory breakdown
     var tdLabels = {{ td_labels | tojson }};
     var tdValues = {{ td_values | tojson }};
     if (tdLabels.length > 0) {
@@ -173,8 +164,6 @@
             }
         });
     }
-
-    // Most changed files chart
     var mcLabels = {{ mc_labels | tojson }};
     var mcValues = {{ mc_values | tojson }};
     if (mcLabels.length > 0) {
