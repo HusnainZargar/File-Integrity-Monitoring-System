@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}FIM Dashboard{% endblock %}</title>
+    <title>{% block title %}IntegrityEye Dashboard{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -38,8 +38,6 @@
             -webkit-font-smoothing: antialiased;
         }
         .container { display: flex; min-height: 100vh; }
-
-        /* Sidebar */
         .sidebar {
             width: 280px;
             background: var(--bg-sidebar);
@@ -52,7 +50,13 @@
             flex-direction: column;
         }
         .sidebar-header { padding: 24px 20px 20px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-        .sidebar-brand { font-size: 1.25rem; font-weight: 700; color: var(--text); letter-spacing: -0.02em; margin: 0 0 2px; }
+        .sidebar-brand {
+            font-size: 1.3rem; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 2px;
+            background: linear-gradient(90deg, #58a6ff 0%, #a371f7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
         .sidebar-product { font-size: 0.8125rem; color: var(--text-muted); margin: 0 0 6px; line-height: 1.35; }
         .sidebar-tagline { font-size: 0.6875rem; color: var(--text-muted); opacity: 0.85; margin: 0; line-height: 1.4; }
         .sidebar-nav { flex: 1; padding: 16px 0; }
@@ -94,8 +98,6 @@
             font-family: inherit;
         }
         .sidebar-session button.logout-btn:hover { background: var(--danger-soft); }
-
-        /* Main content */
         .main-content {
             flex: 1; margin-left: 280px; min-width: 0;
             padding: 28px 32px 64px;
@@ -106,7 +108,6 @@
             margin: 0 0 20px; letter-spacing: -0.02em;
         }
 
-        /* Cards */
         .card {
             background: var(--bg-row-alt);
             border: 1px solid var(--border);
@@ -114,8 +115,6 @@
             margin-bottom: 20px;
             overflow: hidden;
         }
-
-        /* Tables */
         table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
         th, td { padding: 14px 20px; text-align: left; border-bottom: 1px solid var(--border); }
         th {
@@ -128,8 +127,6 @@
         tbody tr:nth-child(even) { background: var(--bg-row-alt); }
         tbody tr:hover { background: var(--bg-row); }
         td { color: var(--text); }
-
-        /* Expand / details */
         .expand {
             cursor: pointer; font-weight: 600; color: var(--accent); font-size: 1rem;
             user-select: none; display: inline-flex; align-items: center;
@@ -163,19 +160,13 @@
         .attr-table td.attr-old { border-right: 1px solid var(--border); }
         .changed { background: var(--warn-bg) !important; }
         .changed td { color: var(--text); }
-
-        /* Severity */
         .sev { font-size: 1rem; line-height: 1; }
         .sev-critical { color: #f85149; }
         .sev-high { color: #db6d28; }
         .sev-medium { color: #d29922; }
         .sev-low { color: #58a6ff; }
-
-        /* Path */
         .path-cell { max-width: 280px; }
         .path-text { font-family: 'IBM Plex Mono', monospace; font-size: 0.8125rem; word-break: break-all; }
-
-        /* Dashboard metrics */
         .metrics-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
         .metric-card {
             background: var(--bg-row-alt); border: 1px solid var(--border);
@@ -187,8 +178,6 @@
         .metric-card.low { border-left: 4px solid #58a6ff; }
         .metric-card .count { font-size: 2rem; font-weight: 700; line-height: 1.2; }
         .metric-card .label { font-size: 0.8125rem; color: var(--text-muted); margin-top: 4px; }
-
-        /* Status strip */
         .status-strip {
             display: flex; flex-wrap: wrap; gap: 24px; align-items: center;
             background: var(--bg-row); border: 1px solid var(--border);
@@ -199,11 +188,9 @@
         .status-strip .dot { width: 8px; height: 8px; border-radius: 50%; background: #3fb950; }
         .status-strip .dot.dot-paused { background: var(--warn); }
 
-        /* Charts */
         .chart-container { position: relative; height: 320px; margin-bottom: 24px; }
         .chart-title { font-size: 0.9375rem; font-weight: 600; margin-bottom: 12px; color: var(--text); }
 
-        /* Pagination */
         .pagination {
             display: flex; align-items: center; justify-content: space-between;
             padding: 16px 20px; border-top: 1px solid var(--border);
@@ -220,7 +207,6 @@
         .page-btn.active { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
         .page-btn.disabled { opacity: 0.4; pointer-events: none; }
 
-        /* Search bar */
         .search-bar {
             display: flex; gap: 10px; align-items: center; margin-bottom: 16px;
         }
@@ -281,7 +267,7 @@
 <div class="container">
     <nav class="sidebar">
         <div class="sidebar-header">
-            <h1 class="sidebar-brand">FIM</h1>
+            <h1 class="sidebar-brand">IntegrityEye</h1>
             <p class="sidebar-product">File Integrity Monitoring System</p>
             <p class="sidebar-tagline">Real-time file integrity and metadata monitoring</p>
         </div>
@@ -321,9 +307,8 @@
         {% block content %}{% endblock %}
     </div>
 </div>
-<footer>v0.5.0-alpha</footer>
+<footer>IntegrityEye &nbsp;·&nbsp; v0.5.0-alpha</footer>
 
-<!-- Logout confirmation modal -->
 <div id="logoutModal" class="global-modal-overlay" onclick="closeLogoutModal(event)">
     <div class="global-modal-box">
         <div class="global-modal-icon">🚪</div>
