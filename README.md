@@ -14,6 +14,20 @@ IntegrityEye is a host-based file integrity monitoring (FIM) system built for Li
 Runs persistently as a **systemd service** and exposes a dark-themed **Flask web dashboard** for live monitoring, alert triage, forensic analysis, and configuration — all from the browser.
  
 ---
+
+## Screenshots
+ 
+> Dashboard · Alerts · File Analysis · Statistics
+ 
+| Dashboard | Alerts |
+|---|---|
+| ![Dashboard](docs/screenshots/dashboard.png) | ![Alerts](docs/screenshots/alerts.png) |
+ 
+| File Analysis | Statistics |
+|---|---|
+| ![File Analysis](docs/screenshots/file_analysis.png) | ![Statistics](docs/screenshots/statistics.png) |
+ 
+---
  
 ## Key Features
  
