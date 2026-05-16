@@ -1,7 +1,6 @@
-"""All web routes: auth, dashboard, logs, alerts, analysis, settings, account."""
 import os
 from datetime import datetime, timedelta
-from flask import Blueprint, render_template, request, redirect, url_for, session
+from flask import jsonify, Blueprint, render_template, request, redirect, url_for, session
 
 from components.utils import (
     get_logs,
@@ -37,11 +36,8 @@ from web.auth import (
 
 bp = Blueprint('routes', __name__)
 
-PAGE_SIZE = 10   # entries per page for logs and alerts
+PAGE_SIZE = 10   
 
-# ---------------------------------------------------------------------------
-# Alert enrichment helpers
-# ---------------------------------------------------------------------------
 
 _ATTR_ALERT_MAP = [
     ('suid',  'Privilege Flag Change', 'critical'),
@@ -71,7 +67,6 @@ def _derive_alert_type_and_severity(alert):
     new_a = details.get('new') or {}
     changed = _changed_attrs(old_a, new_a)
 
-    # Use event_type from DB if available (reliable)
     event_type = alert.get('event_type') or 'info'
 
     if 'Deleted' in msg:
@@ -106,6 +101,12 @@ def _derive_alert_type_and_severity(alert):
     if 'Error' in msg or 'Failed' in msg:
         return 'Error', 'high'
     return msg[:40] or 'Alert', 'low'
+
+
+def _alert_severity(alert):
+    """Return just the severity string for a single alert dict."""
+    _, severity = _derive_alert_type_and_severity(alert)
+    return severity
 
 
 def _normalize_alert_type(atype):
@@ -240,9 +241,6 @@ def _dashboard_data():
     }
 
 
-# ---------------------------------------------------------------------------
-# Routes — auth
-# ---------------------------------------------------------------------------
 
 @bp.route('/')
 def index():
@@ -275,9 +273,6 @@ def logout():
     return redirect(url_for('routes.login'))
 
 
-# ---------------------------------------------------------------------------
-# Routes — main views
-# ---------------------------------------------------------------------------
 
 @bp.route('/dashboard')
 @login_required
@@ -318,9 +313,6 @@ def show_alerts():
                            search=search)
 
 
-# ---------------------------------------------------------------------------
-# Routes — analysis
-# ---------------------------------------------------------------------------
 
 FILE_ANALYSIS_PAGE_SIZE = 5
 
@@ -332,7 +324,6 @@ def file_analysis():
     search = (request.args.get('search') or '').strip()
     page = max(1, int(request.args.get('page', 1)))
 
-    # Filter + sort paths
     all_paths = sorted(baseline.keys())
     if search:
         filtered = [p for p in all_paths if search.lower() in p.lower()]
@@ -352,7 +343,6 @@ def file_analysis():
         file_attrs = baseline[selected_path]
         history = get_file_history(selected_path)
     elif selected_path:
-        # Removed from baseline but history may still exist
         history = get_file_history(selected_path)
 
     return render_template('file_analysis.html',
@@ -376,14 +366,12 @@ def statistics():
     hourly_counts = get_hourly_event_counts()
     event_type_counts = get_event_type_counts()
 
-    # Directory breakdown: group baseline files by parent dir
     dir_counts = {}
     for path in baseline:
         parent = os.path.dirname(path)
         dir_counts[parent] = dir_counts.get(parent, 0) + 1
     top_dirs = sorted(dir_counts.items(), key=lambda x: x[1], reverse=True)[:10]
 
-    # Baseline drift: files that appear in any alert
     alerts_raw, _ = get_alerts()
     alerted_paths = set()
     for a in alerts_raw:
@@ -394,23 +382,18 @@ def statistics():
     drift_count = len(alerted_paths)
     drift_pct = round((drift_count / files_tracked * 100) if files_tracked else 0, 1)
 
-    # SUID change count
     suid_count = event_type_counts.get('suid_change', 0)
 
-    # Hourly labels/values for chart
     hourly_labels = [f"{h}:00" for h in range(24)]
     hourly_values = [hourly_counts.get(str(i).zfill(2), 0) for i in range(24)]
 
-    # Event type chart data
     et_labels = list(event_type_counts.keys())
     et_values = list(event_type_counts.values())
 
-    # Most changed files chart data
     mc_labels = [os.path.basename(f['path']) or f['path'] for f in most_changed]
     mc_full_paths = [f['path'] for f in most_changed]
     mc_values = [f['count'] for f in most_changed]
 
-    # Top dirs chart data
     td_labels = [os.path.basename(d[0]) or d[0] for d in top_dirs]
     td_values = [d[1] for d in top_dirs]
 
@@ -431,9 +414,6 @@ def statistics():
                            most_changed=most_changed)
 
 
-# ---------------------------------------------------------------------------
-# Routes — settings
-# ---------------------------------------------------------------------------
 
 @bp.route('/settings', methods=['GET', 'POST'])
 @login_required
@@ -520,9 +500,6 @@ def _settings_config():
     }
 
 
-# ---------------------------------------------------------------------------
-# Routes — account
-# ---------------------------------------------------------------------------
 
 @bp.route('/account', methods=['GET', 'POST'])
 @login_required
@@ -587,3 +564,39 @@ def change_password():
     return redirect(url_for('routes.account',
                             pw_success='1' if ok else None,
                             pw_error=msg if not ok else None))
+
+
+@bp.route('/api/dashboard_stats')
+@login_required
+def dashboard_stats():
+    all_alerts, _ = get_alerts()
+    count_critical = sum(1 for a in all_alerts if _alert_severity(a) == 'critical')
+    count_high     = sum(1 for a in all_alerts if _alert_severity(a) == 'high')
+    count_medium   = sum(1 for a in all_alerts if _alert_severity(a) == 'medium')
+    count_low      = sum(1 for a in all_alerts if _alert_severity(a) == 'low')
+
+    state = get_monitor_state()
+    status_monitoring = (
+        'ACTIVE' if (state['monitoring_active'] and state['notifier_running'])
+        else 'PAUSED'
+    )
+    baseline = load_baseline()
+    files_tracked = len(baseline)
+    status_baseline = (
+        f"{files_tracked} file{'s' if files_tracked != 1 else ''} baselined"
+        if files_tracked else 'No baseline'
+    )
+
+    logs, _ = get_logs(limit=1)
+    last_event = logs[0]['timestamp'] if logs else '—'
+
+    return jsonify(
+        count_critical=count_critical,
+        count_high=count_high,
+        count_medium=count_medium,
+        count_low=count_low,
+        status_monitoring=status_monitoring,
+        status_baseline=status_baseline,
+        files_tracked=files_tracked,
+        last_event=last_event,
+    )
