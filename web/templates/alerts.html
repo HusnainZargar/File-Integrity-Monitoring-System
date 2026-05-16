@@ -1,9 +1,8 @@
 {% extends "base.html" %}
-{% block title %}Alerts – FIM{% endblock %}
+{% block title %}Alerts – IntegrityEye{% endblock %}
 {% block content %}
 <h1>🚨 Alerts</h1>
 
-<!-- Search bar -->
 <form method="get" action="{{ url_for('routes.show_alerts') }}" class="search-bar">
     <input type="text" name="search" class="search-input"
            placeholder="Search alerts…" value="{{ search }}">
@@ -104,7 +103,6 @@
         </tbody>
     </table>
 
-    <!-- Pagination -->
     <div class="pagination">
         <span>Showing {{ alerts|length }} of {{ total }} alert{{ 's' if total != 1 else '' }}
             {% if search %} matching "{{ search }}"{% endif %}
